@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>歐洲 11 日狂歡遊</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+	<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+
+	
+        /* 全域字體設定 - 回歸乾淨、易讀的系統預設 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #444444;
+            -webkit-font-smoothing: antialiased;
+            background-color: #E6E4E0; /* 溫和的石材灰底色 */
+        }
+
+        /* 自定義滾動條 - 柔和的大地色 */
+        main::-webkit-scrollbar { width: 4px; }
+        main::-webkit-scrollbar-track { background: transparent; }
+        main::-webkit-scrollbar-thumb { background: #D6D3CD; border-radius: 10px; }
+        
+        /* 俐落時間軸線 - 溫和的燕麥色 */
+        .timeline-line {
+            position: absolute;
+            left: 15px;
+            top: 10px;
+            bottom: -20px;
+            width: 2px;
+            background-color: #E5E2DC;
+            z-index: 0;
+        }
+        
+        /* 隱藏橫向選單的捲動條 */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* 鎖定全域與滑動設定 */
+        html, body {
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            position: fixed;
+            overscroll-behavior-y: none;
+        }
+        main {
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+        .hide-scrollbar {
+            -webkit-overflow-scrolling: touch;
+            width: calc(100% + 2rem);
+        }
+
+        /* 現代 APP 卡片點擊回饋 */
+        .active-scale:active {
+            transform: scale(0.98);
+            transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+		
+		/* 導遊視窗上滑動畫 */
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .animate-slide-up {
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+		
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen m-0">
+
+<div class="w-full sm:w-[393px] h-[100dvh] sm:h-[852px] sm:rounded-[40px] sm:border-[8px] border-stone-300 shadow-2xl overflow-hidden relative bg-[#F7F6F3]">
+    
+    <div id="app" class="w-full h-full overflow-hidden flex flex-col relative" v-cloak>
+		
+        <main
+            class="flex-grow overflow-y-auto overflow-x-hidden px-4 space-y-5 pb-8 relative"
+            :class="currentTab === 'itinerary' ? 'pt-0' : 'pt-5'"
+            @touchstart="handleTouchStart"
+            @touchend="handleTouchEnd"
+        >
+            <section v-if="currentTab === 'info'" class="space-y-4 animate-fade-in">
+                
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden relative">
+                    <div class="px-4 py-3 border-b border-slate-50 flex justify-between items-center bg-white">
+                        <h3 class="font-semibold text-slate-700 text-base flex items-center">
+                            <div class="w-7 h-7 rounded bg-sky-50 text-sky-600 flex items-center justify-center mr-2">
+                                <i class="fas fa-ticket text-xs"></i>
+                            </div>
+                            跨國交通資訊
+                        </h3>
+                        <span class="text-xs font-semibold text-sky-700 bg-sky-100/50 px-2 py-1 rounded">CI81 / EI183 / Eurostar</span>
+                    </div>
+                    <div class="flex flex-col divide-y divide-slate-50">
+                        <div class="p-4">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-slate-500 text-sm font-semibold flex items-center"><i class="fas fa-plane-departure text-sky-500 mr-1.5"></i> 台北 ➔ 倫敦</span>
+                                <span class="text-sm font-medium text-slate-400">04.03 (Fri)</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div class="w-16">
+                                    <div class="text-2xl font-bold text-slate-800 leading-none">08:55</div>
+                                    <div class="text-[13px] text-sky-600 mt-1.5 font-medium bg-sky-50 inline-block px-1.5 rounded">TPE</div>
+                                </div>
+                                <div class="flex flex-col items-center flex-grow px-4">
+                                    <div class="text-xs text-slate-400 font-medium mb-1">華航 CI81</div>
+                                    <div class="w-full flex items-center">
+                                        <div class="h-[1px] bg-slate-200 flex-grow"></div>
+                                        <i class="fas fa-plane text-sky-400 text-sm mx-2"></i>
+                                        <div class="h-[1px] bg-slate-200 flex-grow"></div>
+                                    </div>
+                                </div>
+                                <div class="w-16 text-right">
+                                    <div class="text-2xl font-bold text-slate-800 leading-none">17:00</div>
+                                    <div class="text-[13px] text-sky-600 mt-1.5 font-medium bg-sky-50 inline-block px-1.5 rounded">LHR</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-emerald-50/20">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-slate-500 text-sm font-semibold flex items-center"><i class="fas fa-plane text-emerald-500 mr-1.5"></i> 倫敦 ➔ 都柏林</span>
+                                <span class="text-sm font-medium text-slate-400">04.03 (Fri)</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div class="w-16">
+                                    <div class="text-2xl font-bold text-slate-800 leading-none">21:10</div>
+                                    <div class="text-[13px] text-emerald-600 mt-1.5 font-medium bg-emerald-50 inline-block px-1.5 rounded">LHR</div>
+                                </div>
+                                <div class="flex flex-col items-center flex-grow px-4">
+                                    <div class="text-xs text-slate-400 font-medium mb-1">愛爾蘭航空 EI183</div>
+                                    <div class="w-full flex items-center">
+                                        <div class="h-[1px] bg-slate-200 flex-grow"></div>
+                                        <i class="fas fa-plane text-emerald-400 text-sm mx-2"></i>
+                                        <div class="h-[1px] bg-slate-200 flex-grow"></div>
+                                    </div>
+                                </div>
+                                <div class="w-16 text-right">
+                                    <div class="text-2xl font-bold text-slate-800 leading-none">22:30</div>
+                                    <div class="text-[13px] text-emerald-600 mt-1.5 font-medium bg-emerald-50 inline-block px-1.5 rounded">DUB</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-indigo-50/30">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-slate-500 text-sm font-semibold flex items-center"><i class="fas fa-train text-indigo-500 mr-1.5"></i> 倫敦 ➔ 巴黎</span>
+                                <span class="text-sm font-medium text-slate-400">04.13 (Mon)</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div class="w-16">
+                                    <div class="text-2xl font-bold text-slate-800 leading-none">08:01</div>
+                                    <div class="text-[13px] text-indigo-600 mt-1.5 font-medium bg-indigo-50 inline-block px-1.5 rounded">STP</div>
+                                </div>
+                                <div class="flex flex-col items-center flex-grow px-4">
+                                    <div class="text-xs text-slate-400 font-medium mb-1">Eurostar 801</div>
+                                    <div class="w-full flex items-center">
+                                        <div class="h-[1px] bg-slate-200 flex-grow"></div>
+                                        <i class="fas fa-train text-indigo-400 text-sm mx-2"></i>
+                                        <div class="h-[1px] bg-slate-200 flex-grow"></div>
+                                    </div>
+                                </div>
+                                <div class="w-16 text-right">
+                                    <div class="text-2xl font-bold text-slate-800 leading-none">11:17</div>
+                                    <div class="text-[13px] text-indigo-600 mt-1.5 font-medium bg-indigo-50 inline-block px-1.5 rounded">PAR</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex border-b border-slate-200 mt-2 mb-2 sticky top-0 z-20 bg-[#F7F6F3] pt-2">
+                    <button @click="infoSubTab = 'tickets'" :class="infoSubTab === 'tickets' ? 'text-slate-900 border-slate-900' : 'text-slate-400 border-transparent hover:text-slate-600'" class="flex-1 pb-2.5 text-[15px] font-bold border-b-2 transition-all">數位票券</button>
+                    <button @click="infoSubTab = 'weather'" :class="infoSubTab === 'weather' ? 'text-slate-900 border-slate-900' : 'text-slate-400 border-transparent hover:text-slate-600'" class="flex-1 pb-2.5 text-[15px] font-bold border-b-2 transition-all">天氣預報</button>
+                    <button @click="infoSubTab = 'todos'" :class="infoSubTab === 'todos' ? 'text-slate-900 border-slate-900' : 'text-slate-400 border-transparent hover:text-slate-600'" class="flex-1 pb-2.5 text-[15px] font-bold border-b-2 transition-all">待辦事項</button>
+                </div>
+
+                <div class="relative min-h-[300px]">
+                    
+                    <div v-if="infoSubTab === 'tickets'" class="bg-white rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden animate-fade-in">
+                        
+                        <div class="px-4 pt-3 pb-2 flex justify-end items-center bg-white border-b border-slate-50">
+                            <button @click="isAddTicketOpen = !isAddTicketOpen" class="text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition active-scale shadow-sm flex items-center">
+                                <i :class="isAddTicketOpen ? 'fas fa-times' : 'fas fa-link'" class="mr-1"></i>
+                                {{ isAddTicketOpen ? '取消' : '新增' }}
+                            </button>
+                        </div>
+                        
+                        <div v-show="isAddTicketOpen" class="p-4 bg-indigo-50/50 border-b border-slate-100 animate-fade-in">
+                            <input v-model="newTicketName" type="text" placeholder="票券名稱 (如：歐洲之星車票)" class="w-full mb-2 p-2.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-400 text-slate-700 bg-white">
+                            <div class="flex gap-2">
+                                <input v-model="newTicketUrl" type="text" placeholder="貼上 Google Drive / 票券 連結" class="w-full p-2.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-400 text-slate-700 bg-white">
+                                <button @click="addTicketLink" class="bg-indigo-600 text-white px-4 rounded-lg text-sm font-bold hover:bg-indigo-700 transition flex-shrink-0 active-scale">
+                                    儲存
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 pt-2">
+                            <ul v-if="ticketList && ticketList.length > 0" class="flex flex-col space-y-2.5">
+                                <li v-for="(ticket, index) in ticketList" :key="ticket.id" class="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:border-indigo-300 transition-colors shadow-sm">
+                                    
+                                    <div class="flex items-center overflow-hidden pr-3">
+                                        <div class="w-9 h-9 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center flex-shrink-0 mr-3 border border-indigo-100">
+                                            <i class="fas fa-ticket-alt text-sm transform -rotate-45"></i>
+                                        </div>
+                                        <span class="text-[15px] font-bold text-slate-700 break-words whitespace-normal leading-snug">{{ ticket.name }}</span>
+                                    </div>
+
+                                    <div class="flex items-center gap-2 flex-shrink-0">
+                                        
+                                        <a :href="ticket.url" target="_blank" class="w-8 h-8 flex items-center justify-center bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition active-scale shadow-sm">
+                                            <i class="fas fa-external-link-alt text-sm"></i>
+                                        </a>
+                                        
+                                        <button @click.stop="deleteTicket(index)" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 bg-slate-50 border border-slate-200 hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition active-scale">
+                                            <i class="fas fa-trash-alt text-xs"></i>
+                                        </button>
+                                        
+                                    </div>
+
+                                </li>
+                            </ul>
+                            
+                            <div v-else class="flex flex-col items-center justify-center py-6 text-center">
+                                <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-2">
+                                    <i class="fas fa-cloud-upload-alt text-xl text-slate-300"></i>
+                                </div>
+                                <p class="text-sm text-slate-400">目前沒有票券<br>請將雲端硬碟連結貼上</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="infoSubTab === 'weather'" class="bg-white rounded-2xl shadow-sm border border-slate-100 relative animate-fade-in py-2">
+                        <div class="flex flex-col px-2">
+                            <div v-for="(weather, index) in weatherForecast" :key="index" class="flex items-center justify-between p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+                                <div class="flex-shrink-0 w-[80px]">
+                                    <span class="text-sm text-slate-600 font-medium">{{ weather.date }}</span>
+                                </div>
+                                <div class="flex items-center space-x-3 flex-grow justify-center">
+                                    <i :class="[weather.icon, weather.color]" class="text-base w-5 text-center"></i>
+                                    <span class="text-sm text-slate-500 w-16 text-center">{{ weather.desc }}</span>
+                                </div>
+                                <div class="flex-shrink-0 text-right w-[60px]">
+                                    <span class="text-sm font-semibold text-slate-700">{{ weather.temp }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="infoSubTab === 'todos'" class="bg-white rounded-2xl shadow-sm border border-slate-100 relative animate-fade-in">
+                        <div class="px-4 pb-4 pt-2">
+                            <ul class="flex flex-col">
+                                <li v-for="(todo, index) in todoList" :key="index" class="flex items-center group py-3 border-b border-slate-100">
+                                    <input type="checkbox" :id="`todo-${index}`" v-model="todo.checked" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer flex-shrink-0 transition-colors">
+                                    <div class="flex-grow flex items-center justify-between ml-3 overflow-hidden">
+                                        <label :for="`todo-${index}`" :class="{'line-through text-slate-400': todo.checked}" class="cursor-pointer select-none text-slate-700 text-[15px] pr-2 transition-all break-words whitespace-normal leading-snug">
+											{{ todo.name }}
+										</label>
+                                        <button @click="deleteTodo(index)" class="text-slate-300 hover:text-red-500 p-1 transition opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
+                                            <i class="fas fa-trash-alt text-sm"></i>
+                                        </button>
+                                    </div>
+                                </li>
+                                <li class="flex items-center mt-1 pt-3">
+                                    <div class="w-5 h-5 flex items-center justify-center rounded border border-dashed border-slate-300 mr-3 text-slate-400">
+                                        <i class="fas fa-plus text-[10px]"></i>
+                                    </div>
+                                    <input v-model="newTodoInput" @keyup.enter="addTodo" type="text" placeholder="新增待辦事項..." class="flex-grow text-[15px] bg-transparent border-none focus:outline-none focus:ring-0 placeholder-slate-400 py-1 text-slate-700">
+                                    <button @click="addTodo" class="ml-2 text-emerald-700 font-medium text-sm px-3 py-1.5 bg-emerald-50 rounded hover:bg-emerald-100 transition">
+                                        新增
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                </div>
+            </section>
+
+            <section v-if="currentTab === 'itinerary'" class="space-y-4 animate-fade-in">
+                <div 
+                    class="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md pt-3 pb-3 flex overflow-x-auto space-x-3 flex-shrink-0 hide-scrollbar -mx-4 px-4 border-b border-slate-200"
+                    @touchstart.stop 
+                    @touchend.stop
+                >
+                    <button 
+                        v-for="(day, index) in itinerary" 
+                        :key="'tab-' + index"
+                        @click="currentDayIndex = index"
+                        class="flex-shrink-0 px-4 py-2 rounded-full text-[15px] font-bold transition-all whitespace-nowrap active-scale flex items-center"
+                        :class="currentDayIndex === index ? 'bg-sky-600 text-white shadow-sm' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-100'"
+                    >
+                        <i v-if="currentDayIndex === index" class="fas fa-location-dot mr-1.5 text-sm opacity-90"></i>
+                        Day {{ index + 1 }}
+                    </button>
+                </div>
+
+                <div class="mb-6 animate-fade-in pt-1" :key="currentDayIndex">
+                    <div class="px-1 mb-5 flex flex-col items-start">
+                        <span class="text-sky-700 font-semibold text-xs tracking-wider mb-1.5 px-2.5 py-0.5 rounded bg-sky-100 flex items-center">
+                            <i class="far fa-clock mr-1"></i>{{ itinerary[currentDayIndex].date }}
+                        </span>
+                        <h2 class="font-bold text-2xl text-slate-800 leading-tight mt-1">
+                            {{ itinerary[currentDayIndex].title }}
+                        </h2>
+                        <div class="flex items-center text-sm text-slate-500 mt-2 space-x-3">
+                            <span class="flex items-center"><i class="fas fa-map-marker-alt text-amber-500 mr-1.5"></i>{{ itinerary[currentDayIndex].location }}</span>
+                            <span class="flex items-center"><i class="fas fa-cloud text-sky-500 mr-1.5"></i>{{ itinerary[currentDayIndex].weather }}</span>
+                        </div>
+                    </div>
+
+                    <div class="relative mt-3 px-1">
+                        <div class="timeline-line"></div>
+                        
+                        <div v-for="(spot, sIndex) in itinerary[currentDayIndex].spots" :key="sIndex" class="relative">
+                            <div :class="spot.transport ? 'mb-5' : 'mb-7'" class="relative pl-11">
+                                <div class="absolute left-0 top-2.5 w-8 h-8 bg-white border-2 border-sky-200 rounded-full flex items-center justify-center z-10 shadow-sm">
+                                    <i :class="spot.icon" class="text-sky-600 text-xs"></i>
+                                </div>
+                                
+                                <div @click="openSpotDetail(currentDayIndex, sIndex)" class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm active-scale transition duration-200 cursor-pointer hover:border-sky-300">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div class="flex items-center">
+                                            <span class="text-sky-700 font-semibold text-sm mr-2.5 bg-sky-50 px-2 py-0.5 rounded">{{ spot.time }}</span>
+                                            <h3 class="font-bold text-slate-800 text-base leading-tight">{{ spot.name }}</h3>
+                                        </div>
+                                        <a :href="spot.mapUrl" target="_blank" class="w-8 h-8 bg-slate-50 rounded-full flex items-center justify-center text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors flex-shrink-0" title="開啟地圖">
+                                            <i class="fas fa-location-arrow text-xs"></i>
+                                        </a>
+                                    </div>
+                                    <p class="text-[15px] text-slate-600 mt-1 leading-relaxed">{{ spot.desc }}</p>
+                                    
+                                    <div v-if="spot.note" class="mt-3">
+                                        <span class="text-xs bg-amber-50 text-amber-700 px-2.5 py-1 rounded font-medium border border-amber-100/50 inline-flex items-center">
+                                            <i class="fas fa-lightbulb mr-1.5 opacity-80"></i>{{ spot.note }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="spot.transport" class="relative mb-6 z-10">
+                                <div class="pl-11 text-sm text-slate-600 font-medium flex items-center">
+                                    <div class="bg-slate-200 w-6 h-6 rounded-full flex items-center justify-center mr-2.5 flex-shrink-0">
+                                        <i :class="spot.transportIcon" class="text-slate-500 text-[11px]"></i>
+                                    </div>
+                                    <span class="mt-0.5 leading-relaxed" v-html="spot.transport.split('→').join(' <span class=\' text-slate-400 font-bold\'>→</span> ')"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section v-if="currentTab === 'shopping'" class="space-y-4 animate-fade-in">
+                <div class="flex justify-between items-center mb-3 px-1">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                            購物清單 <i class="fas fa-bag-shopping text-sky-600 ml-2.5"></i>
+                        </h2>
+                        <p class="text-sm text-slate-500 mt-1">必買戰利品整理</p>
+                    </div>
+                    <button 
+                        @click="isAddShopOpen = !isAddShopOpen" 
+                        class="text-sm font-medium transition px-3.5 py-2 rounded-lg flex items-center"
+                        :class="isAddShopOpen ? 'text-slate-600 bg-slate-200' : 'text-white bg-sky-600 hover:bg-sky-700 shadow-sm'"
+                    >
+                        <i v-if="!isAddShopOpen" class="fas fa-plus mr-1.5"></i>
+                        {{ isAddShopOpen ? '取消' : '新增店鋪' }}
+                    </button>
+                </div>
+                
+                <div v-show="isAddShopOpen" class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm animate-fade-in">
+                    <label class="text-base font-medium text-slate-500 mb-2 block">店鋪名稱</label>
+                    <div class="flex gap-2">
+                        <input v-model="newShopNameInput" type="text" placeholder="例如：松本清、Loft" class="bg-slate-50 border border-slate-200 p-3 rounded-lg w-full focus:outline-none focus:border-sky-500 text-base text-slate-700">
+                        <button @click="addShop" class="bg-sky-600 text-white px-5 rounded-lg text-sm font-medium hover:bg-sky-700 transition whitespace-nowrap active-scale">
+                            建立
+                        </button>
+                    </div>
+                </div>
+
+                <div v-for="(shop, index) in shoppingList" :key="index" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div @click="shop.isOpen = !shop.isOpen" class="px-4 py-4 flex justify-between items-center cursor-pointer bg-white active-scale">
+						<h3 class="font-semibold text-slate-800 flex items-center text-base">
+							<div class="w-8 h-8 rounded bg-sky-50 text-sky-600 flex items-center justify-center mr-3 flex-shrink-0">
+								<i class="fas fa-store text-xs"></i>
+							</div>
+							<span class="break-words whitespace-normal leading-snug pr-2">{{ shop.shopName }}</span>
+							<span class="ml-2 text-xs text-white bg-sky-600 px-2 py-0.5 rounded shadow-sm">{{ shop.items.length }}</span>
+						</h3>
+						<div class="flex items-center gap-1">
+							<button @click.stop="deleteShop(index)" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition active-scale">
+								<i class="fas fa-trash-alt text-sm"></i>
+							</button>
+							<div class="w-7 h-7 flex items-center justify-center">
+								<i :class="shop.isOpen ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-slate-400 text-sm"></i>
+							</div>
+						</div>
+					</div>
+                    
+                    <ul v-show="shop.isOpen" class="px-4 pb-4 flex flex-col border-t border-slate-100">
+                        <li v-for="(item, iIndex) in shop.items" :key="iIndex" class="flex items-center group py-3 border-b border-slate-100">
+                            <input type="checkbox" :id="`item-${index}-${iIndex}`" v-model="item.checked" class="w-5 h-5 text-sky-600 rounded border-slate-300 focus:ring-sky-600 cursor-pointer flex-shrink-0 transition-colors">
+                            
+                            <div class="flex-grow flex items-center justify-between ml-3 overflow-hidden">
+                                <label :for="`item-${index}-${iIndex}`" :class="{'line-through text-slate-400': item.checked}" class="cursor-pointer select-none text-slate-700 text-[15px] pr-2 transition-all break-words whitespace-normal leading-snug flex-grow">
+									{{ item.name }}
+								</label>
+                                
+                                <div class="flex items-center gap-3 flex-shrink-0">
+                                    <div class="relative w-9 h-9 flex items-center justify-center">
+                                        <div v-if="item.image" class="relative w-full h-full">
+                                            <img :src="item.image" @click="openLightbox(item.image)" class="w-9 h-9 object-cover rounded-md border border-slate-200 cursor-pointer" alt="商品照片">
+                                            <label :for="`upload-${index}-${iIndex}`" class="absolute -bottom-1 -right-1 bg-white border border-slate-200 rounded-full w-5 h-5 flex items-center justify-center cursor-pointer shadow-sm z-10">
+                                                <i class="fas fa-pen text-[10px] text-slate-500"></i>
+                                            </label>
+                                        </div>
+                                        <label v-else :for="`upload-${index}-${iIndex}`" class="cursor-pointer w-9 h-9 bg-slate-50 border border-slate-300 border-dashed rounded-md flex items-center justify-center text-slate-400 hover:text-sky-600 transition">
+                                            <i class="fas fa-camera text-sm"></i>
+                                        </label>
+                                        <input type="file" :id="`upload-${index}-${iIndex}`" accept="image/*" class="hidden" @change="uploadImage($event, item)">
+                                    </div>
+
+                                    <button @click="deleteItem(index, iIndex)" class="text-slate-300 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded transition opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
+                                        <i class="fas fa-trash-alt text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        <li class="flex items-center mt-1 pt-3">
+                            <div class="w-5 h-5 flex items-center justify-center rounded border border-dashed border-slate-300 mr-3 text-slate-400">
+                                <i class="fas fa-plus text-[10px]"></i>
+                            </div>
+                            <input v-model="shop.newItemInput" 
+                                   @keyup.enter="addItemToShop(shop)"
+                                   type="text" 
+                                   placeholder="新增商品..." 
+                                   class="flex-grow text-[15px] bg-transparent border-none focus:outline-none focus:ring-0 placeholder-slate-400 py-1 text-slate-700">
+                            <button @click="addItemToShop(shop)" class="ml-2 text-sky-700 font-medium text-sm px-3 py-1.5 bg-sky-50 rounded hover:bg-sky-100 transition">
+                                新增
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <section v-if="currentTab === 'packing'" class="space-y-4 animate-fade-in">
+                <div class="flex justify-between items-center mb-3 px-1">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                            行李檢查表 <i class="fas fa-suitcase-rolling text-sky-600 ml-2.5"></i>
+                        </h2>
+                        <p class="text-sm text-slate-500 mt-1">出發前最後確認</p>
+                    </div>
+                    <button 
+                        @click="isAddPackingCatOpen = !isAddPackingCatOpen" 
+                        class="text-sm font-medium transition px-3.5 py-2 rounded-lg flex items-center"
+                        :class="isAddPackingCatOpen ? 'text-slate-600 bg-slate-200' : 'text-white bg-sky-600 hover:bg-sky-700 shadow-sm'"
+                    >
+                        <i v-if="!isAddPackingCatOpen" class="fas fa-plus mr-1.5"></i>
+                        {{ isAddPackingCatOpen ? '取消' : '新增分類' }}
+                    </button>
+                </div>
+                
+                <div v-show="isAddPackingCatOpen" class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm animate-fade-in">
+                    <label class="text-base font-medium text-slate-500 mb-2 block">分類名稱</label>
+                    <div class="flex gap-2">
+                        <input v-model="newPackingCatInput" type="text" placeholder="例如：藥品、衣物" class="bg-slate-50 border border-slate-200 p-3 rounded-lg w-full focus:outline-none focus:border-sky-500 text-base text-slate-700">
+                        <button @click="addPackingCategory" class="bg-sky-600 text-white px-5 rounded-lg text-sm font-medium hover:bg-sky-700 transition whitespace-nowrap active-scale">
+                            建立
+                        </button>
+                    </div>
+                </div>
+
+                <div v-for="(category, cIndex) in packingList" :key="cIndex" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div @click="category.isOpen = !category.isOpen" class="px-4 py-4 flex justify-between items-center cursor-pointer bg-white active-scale">
+                        <h3 class="font-semibold text-slate-800 flex items-center text-base overflow-hidden">
+							<div class="w-8 h-8 rounded bg-sky-50 text-sky-600 flex items-center justify-center mr-3 flex-shrink-0">
+								<i :class="category.icon" class="text-xs"></i>
+							</div>
+							<span class="break-words whitespace-normal leading-snug pr-2">{{ category.title }}</span>
+							<span class="ml-2 text-xs text-white bg-sky-600 px-2 py-0.5 rounded shadow-sm flex-shrink-0">
+								{{ category.items.filter(i => i.checked).length }}/{{ category.items.length }}
+							</span>
+						</h3>
+							<div class="w-7 h-7 flex items-center justify-center">
+                            <i :class="category.isOpen ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-slate-400 text-sm"></i>
+                        </div>
+                    </div>
+
+                    <div v-show="category.isOpen" class="px-4 pb-4 pt-1 border-t border-slate-100">
+                        <div class="space-y-2 mb-3 mt-1">
+                            <div v-for="(item, iIndex) in category.items" :key="iIndex" 
+                                 class="p-3 rounded-xl border flex items-center justify-between transition cursor-pointer active-scale"
+                                 @click="item.checked = !item.checked"
+                                 :class="{'bg-sky-50/50 border-sky-200': item.checked, 'bg-white border-slate-200': !item.checked}">
+                                
+                                <div class="flex items-center flex-grow overflow-hidden">
+                                    <div :class="{'bg-sky-600 border-sky-600': item.checked, 'bg-white border-slate-300': !item.checked}" class="w-5 h-5 border rounded mr-3 flex items-center justify-center text-white transition-colors flex-shrink-0">
+                                        <i v-if="item.checked" class="fas fa-check text-[10px]"></i>
+                                    </div>
+                                    <span :class="{'text-slate-400 line-through': item.checked, 'text-slate-700': !item.checked}" class="text-[15px] transition-colors break-words whitespace-normal leading-snug">{{ item.name }}</span>
+                                </div>
+                                <button @click.stop="deletePackingItem(cIndex, iIndex)" class="text-slate-300 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded transition">
+                                    <i class="fas fa-trash-alt text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center pt-3 border-t border-dashed border-slate-200">
+                            <div class="w-5 h-5 flex items-center justify-center rounded border border-dashed border-slate-300 mr-3 text-slate-400">
+                                <i class="fas fa-plus text-[10px]"></i>
+                            </div>
+                            <input v-model="category.newItemInput" 
+                                   @keyup.enter="addItemToCategory(category)"
+                                   type="text" 
+                                   placeholder="新增物品..." 
+                                   class="flex-grow text-[15px] bg-transparent border-none focus:outline-none focus:ring-0 placeholder-slate-400 py-1 text-slate-700">
+                            <button @click="addItemToCategory(category)" class="ml-2 text-sky-700 font-medium text-sm px-3 py-1.5 bg-sky-50 rounded hover:bg-sky-100 transition active-scale">
+                                新增
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section v-if="currentTab === 'expenses'" class="space-y-4 animate-fade-in">
+                
+                <div class="bg-gradient-to-br from-sky-600 to-blue-700 p-6 rounded-2xl shadow-sm text-white relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-10 -mt-10 transform rotate-45 pointer-events-none"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-8 -mb-8 pointer-events-none"></div>
+                    
+                    <div class="relative z-10 flex flex-col items-center text-center">
+                        <p class="text-sky-100 text-xs font-medium tracking-wider mb-1">Total Expenses (TWD)</p>
+                        <h2 class="text-4xl font-bold tracking-tight mb-1 mt-1 drop-shadow-sm">
+                            <span class="text-2xl font-normal opacity-80 mr-1">NT$</span>{{ formatNumber(totalExpenses) }}
+                        </h2>
+                        <p class="text-sm text-sky-50 mt-2 opacity-90"><i class="fas fa-chart-pie mr-1.5"></i>旅途花費總覽</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-semibold text-slate-800 text-base flex items-center">
+                            <i class="fas fa-exchange-alt text-sky-600 mr-2"></i>即時匯率換算
+                        </h3>
+                        <button 
+                            @click="fetchRealTimeRates" 
+                            class="text-xs text-sky-700 bg-sky-100 hover:bg-sky-200 px-2.5 py-1.5 rounded uppercase font-bold transition flex items-center gap-1.5 active-scale shadow-sm"
+                            title="點擊更新即時匯率"
+                        >
+                            <i class="fas fa-sync-alt text-[10px]" :class="{'animate-spin': isFetchingRates}"></i>
+                            Rate: {{ exchangeRates[calcCurrency] }}
+                        </button>
+                    </div>
+					<div class="flex flex-col gap-3">
+                        <div class="flex bg-slate-100 p-1 rounded-lg w-full">
+                            <button @click="calcCurrency = 'EUR'" :class="calcCurrency === 'EUR' ? 'bg-white shadow-sm text-sky-600 font-bold' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-1.5 text-sm rounded-md transition-all active-scale">歐元 (EUR)</button>
+                            <button @click="calcCurrency = 'GBP'" :class="calcCurrency === 'GBP' ? 'bg-white shadow-sm text-sky-600 font-bold' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-1.5 text-sm rounded-md transition-all active-scale">英鎊 (GBP)</button>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <div class="relative w-[45%]">
+                                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 text-xs font-bold">{{ calcCurrency }}</span>
+                                <input type="number" v-model="calcAmount" placeholder="0" class="w-full py-2.5 pr-3 pl-11 rounded-lg bg-slate-50 border border-slate-300 focus:outline-none focus:border-sky-500 text-right font-medium text-slate-800 text-lg transition-colors">
+                            </div>
+                            <i class="fas fa-chevron-right text-slate-400 text-sm flex-shrink-0"></i>
+                            <div class="relative w-[45%]">
+                                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-sky-600 text-xs font-bold">TWD</span>
+                                <div class="w-full py-2.5 pr-3 pl-11 rounded-lg bg-sky-50 border border-sky-200 text-sky-700 text-lg font-bold text-right overflow-hidden h-[46px] flex items-center justify-end">
+                                    {{ calcAmount ? formatNumber((calcAmount * exchangeRates[calcCurrency]).toFixed(0)) : 0 }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center mb-3 pb-3 border-b border-slate-100">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center">
+                            消費明細 <i class="fas fa-receipt text-sky-600 ml-2"></i>
+                        </h2>
+                        <button 
+                            @click="isAddExpenseOpen = !isAddExpenseOpen" 
+                            class="text-sm transition px-3.5 py-2 rounded-lg flex items-center font-medium"
+                            :class="isAddExpenseOpen ? 'text-slate-600 bg-slate-200' : 'text-white bg-sky-600 hover:bg-sky-700 shadow-sm'"
+                        >
+                            <i v-if="!isAddExpenseOpen" class="fas fa-plus mr-1.5"></i>
+                            {{ isAddExpenseOpen ? '取消' : '記一筆' }}
+                        </button>
+                    </div>
+                    
+                    <div v-show="isAddExpenseOpen" class="bg-slate-50 p-4 rounded-xl mb-4 border border-slate-200 animate-fade-in">
+                        <div class="grid grid-cols-1 gap-3">
+                            <input type="date" v-model="newExpense.date" class="border border-slate-300 p-2.5 text-base rounded-lg w-full text-slate-800 bg-white focus:outline-none focus:border-sky-500">
+                            <input type="text" v-model="newExpense.item" placeholder="消費項目 (如：午餐、車票)" class="border border-slate-300 p-2.5 text-base rounded-lg w-full text-slate-800 bg-white focus:outline-none focus:border-sky-500 placeholder-slate-400">
+                            
+                            <div class="flex gap-2 bg-slate-200/50 p-1 rounded-lg">
+                                <button @click="newExpense.currency = 'EUR'" :class="newExpense.currency === 'EUR' ? 'bg-white shadow text-sky-600 font-bold' : 'text-slate-500'" class="flex-1 py-1.5 text-sm rounded-md transition-all active-scale">EUR</button>
+                                <button @click="newExpense.currency = 'GBP'" :class="newExpense.currency === 'GBP' ? 'bg-white shadow text-sky-600 font-bold' : 'text-slate-500'" class="flex-1 py-1.5 text-sm rounded-md transition-all active-scale">GBP</button>
+                                <button @click="newExpense.currency = 'TWD'" :class="newExpense.currency === 'TWD' ? 'bg-white shadow text-sky-600 font-bold' : 'text-slate-500'" class="flex-1 py-1.5 text-sm rounded-md transition-all active-scale">TWD</button>
+                            </div>
+
+                            <div class="relative flex-grow">
+                                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 text-sm font-bold">{{ newExpense.currency === 'GBP' ? '£' : (newExpense.currency === 'EUR' ? '€' : 'NT$') }}</span>
+                                <input type="number" v-model="newExpense.amount" placeholder="輸入金額" class="border border-slate-300 p-2.5 pl-10 text-base rounded-lg w-full text-slate-800 bg-white focus:outline-none focus:border-sky-500 placeholder-slate-400">
+                            </div>
+                            
+                            <button @click="addExpense" class="bg-sky-600 text-white py-3 rounded-lg text-base font-bold hover:bg-sky-700 transition mt-1 active-scale shadow-md">
+                                儲存紀錄
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-if="Object.keys(groupedExpenses).length > 0" class="space-y-3">
+                        <div v-for="(items, date) in groupedExpenses" :key="date" class="border border-slate-200 rounded-xl overflow-hidden">
+                            
+                            <div @click="toggleExpenseDay(date)" class="bg-slate-100/50 px-4 py-3 flex justify-between items-center cursor-pointer active-scale border-b border-slate-100">
+                                <span class="text-slate-700 text-sm font-semibold">{{ date }}</span>
+                                <div class="flex items-center">
+                                    <span class="text-slate-800 text-sm font-bold mr-3">NT$ {{ formatNumber(calculateDayTotal(items)) }}</span>
+                                    <i :class="expenseDayStates[date] ? 'fas fa-chevron-up' : 'fas fa-chevron-down'" class="text-slate-400 text-xs"></i>
+                                </div>
+                            </div>
+
+                            <div v-show="expenseDayStates[date]" class="bg-white">
+                                <div v-for="exp in items" :key="exp.id" class="flex justify-between items-center border-b border-slate-100 p-4 hover:bg-slate-50 last:border-0 transition-colors">
+                                    <div class="flex flex-col max-w-[50%]">
+                                        <h3 class="text-slate-800 text-[15px] mb-1.5 break-words whitespace-normal leading-snug pr-2">{{ exp.item }}</h3>
+                                        <div>
+                                            <span v-if="exp.currency === 'JPY'" class="text-[11px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-medium">JPY</span>
+                                            <span v-else class="text-[11px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded font-medium">TWD</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <div class="text-right">
+                                            <div class="text-slate-900 text-base font-bold">NT$ {{ formatNumber(exp.finalTwd) }}</div>
+											<div v-if="exp.currency !== 'TWD'" class="text-xs text-slate-500 mt-0.5">
+												({{ exp.currency === 'GBP' ? '£' : '€' }} {{ formatNumber(exp.amount) }})
+											</div>
+                                        </div>
+                                        <button @click="deleteExpense(exp)" class="w-8 h-8 flex items-center justify-center rounded text-slate-300 hover:text-red-500 transition">
+                                            <i class="fas fa-trash-alt text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="flex flex-col items-center justify-center py-10 text-center">
+                        <div class="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                            <i class="fas fa-receipt text-2xl text-slate-400"></i>
+                        </div>
+                        <p class="text-sm text-slate-500">尚無花費紀錄</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+		
+		<div v-if="selectedSpot" class="absolute inset-0 z-[60] flex items-end justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity animate-fade-in" @click="closeSpotDetail">
+            <div class="bg-white w-full max-h-[85%] rounded-t-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up" @click.stop>
+                
+                <div class="px-5 py-4 flex justify-between items-center flex-shrink-0 border-b border-slate-100 bg-white">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800 leading-tight">{{ selectedSpot.name }}</h2>
+                    </div>
+                    <button @click="closeSpotDetail" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors flex-shrink-0 ml-3 active-scale">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="p-5 pt-3 pb-8 overflow-y-auto flex-grow relative [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    
+                    <div class="relative w-full h-48 mb-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden group">
+                        <div v-if="selectedSpot.image || selectedSpot.imageUrl" class="absolute inset-0 flex items-center justify-center text-slate-300 z-0">
+                            <i class="fas fa-image text-3xl animate-pulse"></i>
+                        </div>
+
+                        
+                        <img v-if="selectedSpot.image || selectedSpot.imageUrl" 
+                             v-lazy="selectedSpot.image || selectedSpot.imageUrl" 
+                             @click="openLightbox(selectedSpot.image || selectedSpot.imageUrl)" 
+                             class="absolute inset-0 w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity duration-500 opacity-0 z-10" 
+                             onload="this.style.opacity=1"
+                             alt="景點圖片">
+                        
+                        <label v-else for="upload-spot-img" class="text-slate-400 flex flex-col items-center cursor-pointer w-full h-full justify-center hover:bg-slate-100 transition">
+                            <i class="fas fa-image text-3xl mb-2"></i>
+                            <span class="text-sm font-medium">點擊上傳照片</span>
+                        </label>
+
+                        <label v-if="selectedSpot.image || selectedSpot.imageUrl" for="upload-spot-img" class="absolute bottom-2 right-2 bg-white/90 backdrop-blur border border-slate-200 rounded-full w-9 h-9 flex items-center justify-center cursor-pointer shadow-sm z-10 hover:bg-sky-50 hover:text-sky-600 transition active-scale">
+                            <i class="fas fa-camera text-sm"></i>
+                        </label>
+                        <input type="file" id="upload-spot-img" accept="image/*" class="hidden" @change="uploadSpotImage">
+                    </div>
+                    
+                    <div class="bg-amber-50/70 border border-amber-100/60 rounded-xl p-4">
+                        <div class="flex justify-between items-center mb-2.5">
+                            <h3 class="text-amber-700 font-bold text-[15px] flex items-center">
+                                <i class="fas fa-flag mr-1.5"></i>導遊私房筆記
+                            </h3>
+                            <button @click="selectedSpot.isEditing = !selectedSpot.isEditing" class="text-amber-600 hover:text-amber-800 text-xs px-2.5 py-1 bg-amber-100/50 rounded-md transition font-medium active-scale">
+                                <i :class="selectedSpot.isEditing ? 'fas fa-check mr-1' : 'fas fa-pen mr-1'"></i>
+                                {{ selectedSpot.isEditing ? '完成' : '編輯' }}
+                            </button>
+                        </div>
+                        
+                        <div v-if="!selectedSpot.isEditing" class="text-[15px] text-slate-700 leading-relaxed" v-html="selectedSpot.detail"></div>
+                        
+                        <textarea v-else v-model="selectedSpot.detail" class="w-full h-48 p-3 text-[15px] text-slate-700 bg-white border border-amber-200 rounded-lg focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 resize-none"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="bg-slate-50/95 backdrop-blur-md border-t border-slate-200 flex justify-around items-center h-[85px] z-50 flex-shrink-0 pb-6 pt-2">
+            <button @click="currentTab = 'info'" :class="currentTab === 'info' ? 'text-sky-600 font-bold' : 'text-slate-400 hover:text-sky-600'" class="flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors active-scale">
+                <i class="fas fa-info-circle text-xl mb-0.5"></i>
+                <span class="text-[11px] font-medium tracking-wider">首頁</span>
+            </button>
+            <button @click="currentTab = 'itinerary'" :class="currentTab === 'itinerary' ? 'text-sky-600 font-bold' : 'text-slate-400 hover:text-sky-600'" class="flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors active-scale">
+                <i class="fas fa-calendar-alt text-xl mb-0.5"></i>
+                <span class="text-[11px] font-medium tracking-wider">行程</span>
+            </button>
+            <button @click="currentTab = 'shopping'" :class="currentTab === 'shopping' ? 'text-sky-600 font-bold' : 'text-slate-400 hover:text-sky-600'" class="flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors active-scale">
+                <i class="fas fa-shopping-bag text-xl mb-0.5"></i>
+                <span class="text-[11px] font-medium tracking-wider">購物</span>
+            </button>
+            <button @click="currentTab = 'packing'" :class="currentTab === 'packing' ? 'text-sky-600 font-bold' : 'text-slate-400 hover:text-sky-600'" class="flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors active-scale">
+                <i class="fas fa-suitcase text-xl mb-0.5"></i>
+                <span class="text-[11px] font-medium tracking-wider">行李</span>
+            </button>
+            <button @click="currentTab = 'expenses'" :class="currentTab === 'expenses' ? 'text-sky-600 font-bold' : 'text-slate-400 hover:text-sky-600'" class="flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors active-scale">
+                <i class="fas fa-wallet text-xl mb-0.5"></i>
+                <span class="text-[11px] font-medium tracking-wider">記帳</span>
+            </button>
+        </nav>
+
+        <div v-if="lightboxImage" class="absolute inset-0 bg-slate-900/95 z-[80] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity animate-fade-in" @click="closeLightbox">
+            <button @click.stop="closeLightbox" class="absolute top-6 right-6 w-10 h-10 bg-white/10 rounded-full text-white flex items-center justify-center hover:bg-white/20 transition-all focus:outline-none z-[90]">
+                <i class="fas fa-times"></i>
+            </button>
+            <img :src="lightboxImage" class="max-w-full max-h-[80%] object-contain rounded-lg shadow-2xl" @click.stop alt="放大照片">
+        </div>
+
+    </div>
+</div>
+
+<script>
+		const { createApp, ref, computed, watch, onMounted , nextTick } = Vue;
+
+		const app = createApp({
+			setup() {
+				// ==========================================
+				// --- 核心配置：Firebase 與本機切分 ---
+				// ==========================================
+				const isSyncingFromCloud = ref(false); 
+				const TRIP_ID = "europe_trip_2026"; 
+				
+				const firebaseConfig = {
+					apiKey: "AIzaSyB7B04jwgto_Jeix9o1p5d6GmHxWFNc2O0",
+					databaseURL: "https://europe-trip-2026-f4c7b-default-rtdb.asia-southeast1.firebasedatabase.app/",
+					projectId: "europe-trip-2026-f4c7b"
+				};
+				
+				if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+				const db = firebase.database();
+				const tripRef = db.ref(TRIP_ID);
+			
+			const selectedDayIndex = ref(null);
+			const selectedSpotIndex = ref(null);
+
+			// 改用 computed 永遠追蹤最新陣列裡的那筆資料
+			const selectedSpot = computed(() => {
+				if (selectedDayIndex.value !== null && selectedSpotIndex.value !== null && itinerary.value[selectedDayIndex.value]) {
+					return itinerary.value[selectedDayIndex.value].spots[selectedSpotIndex.value];
+				}
+				return null;
+			});
+
+			const openSpotDetail = (dIndex, sIndex) => { 
+				selectedDayIndex.value = dIndex;
+				selectedSpotIndex.value = sIndex;
+			};
+
+			const closeSpotDetail = () => { 
+				selectedDayIndex.value = null;
+				selectedSpotIndex.value = null;
+			};
+
+            // return { ... 原本的匯出內容 ... }
+
+            // ▼▼▼ 新增這一段：處理景點照片上傳 ▼▼▼
+            const uploadSpotImage = (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    // 將寬度限制在 800px 以內
+                    compressImage(file, 800, (compressedUrl) => {
+                        selectedSpot.value.imageUrl = compressedUrl;
+                    });
+                }
+                event.target.value = ''; // 清空 input
+            };
+            // ▲▲▲ 新增這一段 ▲▲▲
+			
+            const currentTab = ref('itinerary'); 
+			
+			// ==========================================
+            // --- 圖片壓縮引擎 (避免 LocalStorage 塞爆) ---
+            // ==========================================
+            const compressImage = (file, maxWidth, callback) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        // 等比例縮小尺寸
+                        if (width > maxWidth) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        
+                        // 畫入 Canvas
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // 壓縮成 JPEG，品質設定為 0.7 (畫質夠用且檔案超小)
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        callback(compressedDataUrl);
+                    };
+                };
+            };
+			const infoSubTab = ref('tickets');
+            const tabs = ['info', 'itinerary', 'shopping', 'packing', 'expenses'];
+			
+            let touchStartX = 0;
+            let touchStartY = 0;
+
+            const handleTouchStart = (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            };
+
+            const handleTouchEnd = (e) => {
+                const touchEndX = e.changedTouches[0].screenX;
+                const touchEndY = e.changedTouches[0].screenY;
+                
+                const diffX = touchStartX - touchEndX;
+                const diffY = touchStartY - touchEndY;
+
+                // 移除切換主分頁，改為在 itinerary (行程) 分頁時切換不同天數
+                if (currentTab.value === 'itinerary') {
+                    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                        if (diffX > 0 && currentDayIndex.value < itinerary.value.length - 1) {
+                            // 向左滑，切換到下一天
+                            currentDayIndex.value++;
+                        } else if (diffX < 0 && currentDayIndex.value > 0) {
+                            // 向右滑，切換到上一天
+                            currentDayIndex.value--;
+                        }
+                    }
+                }
+            };
+			
+            
+            const currentDayIndex = ref(0); 
+			const calcAmount = ref(null);
+            const calcCurrency = ref('EUR'); 
+            const exchangeRates = ref({
+                GBP: 40.5, // 預設值，避免斷網時沒資料
+                EUR: 34.5,
+                TWD: 1
+            });
+            
+            // ▼▼▼ 新增這段：即時匯率抓取邏輯 ▼▼▼
+            const isFetchingRates = ref(false);
+            const fetchRealTimeRates = async () => {
+                if (isFetchingRates.value) return;
+                isFetchingRates.value = true;
+                try {
+                    // 使用免 API Key 的公開匯率服務，以 TWD 為基準
+                    const response = await fetch('https://open.er-api.com/v6/latest/TWD');
+                    const data = await response.json();
+                    
+                    if (data && data.result === "success") {
+                        // API 回傳的是 1 台幣 = 多少外幣，所以我們要用 1 去除以它，換算成 1 外幣 = 多少台幣
+                        exchangeRates.value.EUR = Number((1 / data.rates.EUR).toFixed(2));
+                        exchangeRates.value.GBP = Number((1 / data.rates.GBP).toFixed(2));
+                    }
+                } catch (error) {
+                    console.error("匯率更新失敗，將使用本機預設/暫存匯率", error);
+                } finally {
+                    // 加點延遲讓轉圈圈動畫視覺上有感
+                    setTimeout(() => { isFetchingRates.value = false; }, 800);
+                }
+            };
+            // ▲▲▲ 新增結束 ▲▲▲
+            const weatherForecast = ref([
+				{ date: '4/3 (Fri)', temp: '5~11°C', desc: '多雲轉陰', icon: 'fas fa-cloud', color: 'text-slate-400' },
+				{ date: '4/4 (Sat)', temp: '6~12°C', desc: '陰時多雲', icon: 'fas fa-cloud', color: 'text-slate-400' },
+				{ date: '4/5 (Sun)', temp: '7~11°C', desc: '短暫陣雨', icon: 'fas fa-cloud-rain', color: 'text-sky-500' },
+				{ date: '4/6 (Mon)', temp: '6~12°C', desc: '多雲有風', icon: 'fas fa-wind', color: 'text-slate-500' },
+				{ date: '4/7 (Tue)', temp: '7~13°C', desc: '晴時多雲', icon: 'fas fa-cloud-sun', color: 'text-amber-500' },
+				{ date: '4/8 (Wed)', temp: '6~11°C', desc: '陰有雨', icon: 'fas fa-cloud-showers-heavy', color: 'text-sky-600' },
+				{ date: '4/9 (Thu)', temp: '8~15°C', desc: '多雲轉晴', icon: 'fas fa-cloud-sun', color: 'text-amber-500' },
+				{ date: '4/10 (Fri)', temp: '9~16°C', desc: '晴朗', icon: 'fas fa-sun', color: 'text-amber-500' },
+				{ date: '4/11 (Sat)', temp: '8~15°C', desc: '多雲', icon: 'fas fa-cloud', color: 'text-slate-400' },
+				{ date: '4/12 (Sun)', temp: '7~14°C', desc: '短暫雨', icon: 'fas fa-cloud-rain', color: 'text-sky-500' },
+				{ date: '4/13 (Mon)', temp: '9~17°C', desc: '晴時多雲', icon: 'fas fa-cloud-sun', color: 'text-amber-500' }
+			]);
+            const isWeatherOpen = ref(true);
+            
+            const newTodoInput = ref('');
+            const isTodoOpen = ref(true);
+            const todoList = ref([
+                { name: '確認兩人的護照效期 (需滿六個月)', checked: true },
+                { name: '申辦國際駕照 (愛爾蘭自駕必備，記得也要帶台灣駕照！)', checked: false },
+                { name: '確認 4/3 清晨豪士登堡機場接送時間', checked: false },
+                { name: '列印歐洲之星 (Eurostar) 跨國車票憑證', checked: false },
+                { name: '預訂莫赫懸崖 (Cliffs of Moher) 早鳥票', checked: false },
+                { name: '預訂三一學院 (凱爾斯之書) 門票', checked: false },
+                { name: '確認手機 Apple Pay 與信用卡海外刷卡設定', checked: false },
+                { name: '準備速寫本與畫材 (把歐洲美麗的街景與建築畫下來)', checked: false },
+                { name: '購買歐洲跨國網卡或 eSIM', checked: false }
+            ]);
+			
+			// --- 數位票券夾邏輯 (雲端連結版) ---
+            const ticketList = ref([]);
+            const isAddTicketOpen = ref(false);
+            const newTicketName = ref('');
+            const newTicketUrl = ref('');
+            
+            const addTicketLink = () => {
+                if (!newTicketName.value || !newTicketUrl.value) {
+                    alert('請填寫票券名稱與網址喔！');
+                    return;
+                }
+                
+                // 貼心防呆：如果網址忘記複製到 http，自動幫忙補上
+                let finalUrl = newTicketUrl.value;
+                if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+                    finalUrl = 'https://' + finalUrl;
+                }
+
+                ticketList.value.push({
+                    id: Date.now(),
+                    name: newTicketName.value,
+                    url: finalUrl
+                });
+
+                // 存檔後清空輸入框並收起
+                newTicketName.value = '';
+                newTicketUrl.value = '';
+                isAddTicketOpen.value = false;
+            };
+
+            const deleteTicket = (index) => {
+                if(confirm('確定要刪除這張票券連結嗎？')) {
+                    ticketList.value.splice(index, 1);
+                }
+            };
+            
+            const uploadTicket = (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    // 上傳前先詢問這張票叫什麼名字
+                    const ticketName = prompt('請輸入票券名稱：');
+                    if (!ticketName) {
+                        event.target.value = ''; // 如果按取消，就清空輸入
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        ticketList.value.push({
+                            id: Date.now(),
+                            name: ticketName,
+                            image: e.target.result
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                }
+                event.target.value = '';
+            };
+
+            const addTodo = () => {
+                if (!newTodoInput.value) return;
+                todoList.value.push({ name: newTodoInput.value, checked: false });
+                newTodoInput.value = '';
+            };
+
+            const deleteTodo = (index) => {
+                todoList.value.splice(index, 1);
+            };
+            
+            const formatNumber = (val) => {
+                if (!val) return '0';
+                return Number(val).toLocaleString();
+            };
+
+            const isAddShopOpen = ref(false);
+            const newShopNameInput = ref('');
+
+            const isAddPackingCatOpen = ref(false);
+            const newPackingCatInput = ref('');
+			
+            const isAddExpenseOpen = ref(false);
+            const newExpense = ref({ date: '2026-04-03', item: '', amount: '', currency: 'EUR' });
+            const expenseList = ref([]);
+            const expenseDayStates = ref({}); 
+
+            const lightboxImage = ref(null);
+            const openLightbox = (imgSrc) => { lightboxImage.value = imgSrc; };
+            const closeLightbox = () => { lightboxImage.value = null; };
+
+            const totalExpenses = computed(() => expenseList.value.reduce((sum, item) => sum + item.finalTwd, 0));
+
+            const groupedExpenses = computed(() => {
+                const sorted = [...expenseList.value].sort((a, b) => new Date(b.date) - new Date(a.date));
+                const groups = {};
+                sorted.forEach(item => {
+                    if (!groups[item.date]) {
+                        groups[item.date] = [];
+                        if (expenseDayStates.value[item.date] === undefined) {
+                            expenseDayStates.value[item.date] = true;
+                        }
+                    }
+                    groups[item.date].push(item);
+                });
+                return groups;
+            });
+
+            const addShop = () => {
+                if (!newShopNameInput.value) return;
+                shoppingList.value.push({ shopName: newShopNameInput.value, isOpen: true, items: [], newItemInput: '' });
+                newShopNameInput.value = '';
+                isAddShopOpen.value = false;
+            };
+			
+			const deleteShop = (shopIndex) => {
+				// 加上防呆確認，避免手滑刪掉整個店鋪的辛苦清單
+				if (confirm('確定要刪除這個店鋪與裡面的所有商品嗎？')) {
+					shoppingList.value.splice(shopIndex, 1);
+				}
+			};
+
+            const addItemToShop = (shop) => {
+                if (!shop.newItemInput) return;
+                shop.items.push({ name: shop.newItemInput, checked: false, image: null });
+                shop.newItemInput = '';
+            };
+
+            const deleteItem = (shopIndex, itemIndex) => {
+                shoppingList.value[shopIndex].items.splice(itemIndex, 1);
+            };
+
+            const uploadImage = (event, item) => {
+                const file = event.target.files[0];
+                if (file) {
+                    // 購物縮圖不用太大，限制寬度 500px 即可
+                    compressImage(file, 500, (compressedUrl) => {
+                        item.image = compressedUrl;
+                    });
+                }
+                event.target.value = '';
+            };
+
+            const addPackingCategory = () => {
+                if (!newPackingCatInput.value) return;
+                packingList.value.push({ title: newPackingCatInput.value, isOpen: true, items: [], newItemInput: '' });
+                newPackingCatInput.value = '';
+                isAddPackingCatOpen.value = false;
+            };
+
+            const addItemToCategory = (category) => {
+                if (!category.newItemInput) return;
+                category.items.push({ name: category.newItemInput, checked: false });
+                category.newItemInput = '';
+            };
+
+            const deletePackingItem = (catIndex, itemIndex) => {
+                packingList.value[catIndex].items.splice(itemIndex, 1);
+            };
+
+            const addExpense = () => {
+                if (!newExpense.value.item || !newExpense.value.amount) return;
+				const amount = parseFloat(newExpense.value.amount);
+				const rate = exchangeRates.value[newExpense.value.currency];
+				const finalTwd = Math.round(amount * rate);
+                
+                expenseList.value.unshift({ 
+                    id: Date.now(),
+                    ...newExpense.value, 
+                    amount, 
+                    finalTwd 
+                });
+                
+                expenseDayStates.value[newExpense.value.date] = true;
+                newExpense.value.item = ''; 
+                newExpense.value.amount = '';
+            };
+
+            const deleteExpense = (itemToDelete) => {
+                const index = expenseList.value.findIndex(item => item.id === itemToDelete.id);
+                if (index !== -1) {
+                    expenseList.value.splice(index, 1);
+                }
+            };
+
+            const toggleExpenseDay = (date) => {
+                expenseDayStates.value[date] = !expenseDayStates.value[date];
+            };
+
+            const calculateDayTotal = (items) => {
+                return items.reduce((sum, item) => sum + item.finalTwd, 0);
+            };
+
+            const shoppingList = ref([
+                { shopName: '🇬🇧 英國：香氛與皇室御用茶', isOpen: true, newItemInput: '', items: [
+                    { name: 'F&M 或 Whittard 經典英式紅茶', checked: false, image: null },
+                    { name: 'Walkers 蘇格蘭奶油餅乾', checked: false, image: null },
+                    { name: '香水與身體保養 (可尋找喜歡的木質、草本或琥珀調)', checked: false, image: null }
+                ]},
+                { shopName: '🇮🇪 愛爾蘭：道地紀念品', isOpen: true, newItemInput: '', items: [
+                    { name: 'Claddagh Ring (高威著名的克拉達戒指)', checked: false, image: null },
+                    { name: 'Guinness 黑啤酒周邊紀念品', checked: false, image: null },
+                    { name: 'Tayto 洋芋片 (當地超市必買國民零食)', checked: false, image: null }
+                ]},
+                { shopName: '🇫🇷 法國：經典藥妝與甜點', isOpen: true, newItemInput: '', items: [
+                    { name: '理膚寶水 / 貝德瑪 等法式藥妝保養品', checked: false, image: null },
+                    { name: 'Pierre Hermé 馬卡龍', checked: false, image: null },
+                    { name: 'Mariage Frères 瑪黑兄弟茶', checked: false, image: null }
+                ]},
+                { shopName: '🛍️ Bicester Village (Outlet)', isOpen: true, newItemInput: '', items: [
+                    { name: '名牌皮夾 / 包包 (送自己的禮物)', checked: false, image: null },
+                    { name: 'Burberry 經典風衣或羊毛圍巾', checked: false, image: null },
+                    { name: 'Jo Malone 香水', checked: false, image: null }
+                ]}
+            ]);
+
+            const packingList = ref([
+			{ 
+				icon: 'fas fa-passport', 
+				title: '證件與票券 (跨國必備)', 
+				isOpen: true, 
+				newItemInput: '', 
+				items: [
+					{ name: '護照 (效期需滿六個月)', checked: false }, 
+					{ name: '國際駕照與台灣駕照 (愛爾蘭自駕必備！)', checked: false }, 
+					{ name: '歐洲之星 Eurostar 車票憑證', checked: false }, 
+					{ name: '信用卡 (綁定 Apple Pay，歐洲超好用)', checked: false }, 
+					{ name: '英鎊 (GBP) 與 歐元 (EUR) 現金', checked: false }
+				] 
+			},
+			{ 
+				icon: 'fas fa-shield-alt', 
+				title: '防盜與隨身裝備', 
+				isOpen: true, 
+				newItemInput: '', 
+				items: [
+					{ name: '防盜斜背包 (巴黎、倫敦車站必備)', checked: false }, 
+					{ name: '手機掛繩 (防手滑也防搶)', checked: false }, 
+					{ name: '隱形防盜貼身腰包', checked: false }, 
+					{ name: '環保購物袋 (去 Tesco 補給超實用)', checked: false }
+				] 
+			},
+			{ 
+				icon: 'fas fa-plug', 
+				title: '電子與自駕裝備', 
+				isOpen: true, 
+				newItemInput: '', 
+				items: [
+					{ name: '英國/愛爾蘭轉接頭 (三孔方型 Type G)', checked: false }, 
+					{ name: '法國/歐陸轉接頭 (雙孔圓型 Type E/F)', checked: false }, 
+					{ name: '車用手機支架 (愛爾蘭導航找路超級重要)', checked: false }, 
+					{ name: '大容量行動電源與充電線', checked: false },
+					{ name: '歐洲網卡 (實體 SIM 卡或 eSIM)', checked: false }
+				] 
+			},
+			{ 
+				icon: 'fas fa-layer-group', 
+				title: '洋蔥式穿搭 (5~17°C)', 
+				isOpen: true, 
+				newItemInput: '', 
+				items: [
+					{ name: '防風防水外套 (對抗愛爾蘭妖風與陣雨)', checked: false }, 
+					{ name: '輕薄羽絨衣或保暖中層', checked: false }, 
+					{ name: '好走耐走的運動鞋 (每天絕對破萬步)', checked: false }, 
+					{ name: '長袖上衣與發熱衣', checked: false },
+					{ name: '保暖配件 (毛帽、圍巾、手套)', checked: false },
+					{ name: '換洗衣物與厚襪子 (11天份)', checked: false }
+				] 
+			},
+			{ 
+				icon: 'fas fa-pills', 
+				title: '藥品與保濕保養', 
+				isOpen: false,
+				newItemInput: '', 
+				items: [
+					{ name: '暈車藥 (開 Slea Head 山路絕對用得到)', checked: false }, 
+					{ name: '個人常備藥物 (感冒、腸胃、止痛藥)', checked: false }, 
+					{ name: '高保濕身體乳/護手霜 (歐洲初春偏乾)', checked: false },
+					{ name: '護唇膏與防曬乳', checked: false },
+					{ name: '休足時間 (每天回飯店貼一下)', checked: false }
+				] 
+			}
+		]);
+            const itinerary = ref([
+			{
+				date: 'Day 1 | 4/3 (Fri)', 
+				title: '啟程：台北 → 倫敦 → 都柏林', 
+				location: 'TPE → LHR → DUB', 
+				weather: '多雲', 
+				isOpen: true,
+				spots: [
+					{ 
+						time: '05:15', 
+						name: '機場接送', 
+						icon: 'fas fa-car', 
+						desc: '豪士登堡機場接送', 
+						detail: '準備好護照與行囊，出發前往機場！',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Taiwan+Taoyuan+International+Airport',
+						imageUrl: 'https://loremflickr.com/600/400/airport,taiwan/all', 
+						transport: '搭乘豪士登堡專車 → 桃園機場 TPE (約 1hr)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '08:55', 
+						name: '台北 TPE ➔ 倫敦 LHR', 
+						icon: 'fas fa-plane-departure', 
+						desc: '中華航空 CI81', 
+						detail: '<b>飛行時間：</b>約 16 小時。<br><br>漫長的飛行時間，記得穿著寬鬆舒適的衣物，多喝水補充水分。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=London+Heathrow+Airport',
+						imageUrl: 'https://loremflickr.com/600/400/airplane,window/all',
+						transport: '搭乘華航 CI81 → 倫敦希斯洛機場 LHR (約 16hr)', 
+						transportIcon: 'fas fa-plane' 
+					},
+					{ 
+						time: '17:00', 
+						name: '倫敦希斯洛機場 (LHR) 轉機', 
+						icon: 'fas fa-exchange-alt', 
+						desc: '停留約 4 小時 10 分', 
+						detail: '<b>轉機動線：</b><br>從 第 3 航廈 (T3) 步行前往 第 2 航廈 (T2)。<br>⚠️ <b>注意：</b>需重新報到登機並重新通過安全檢查（安檢液體需裝於透明袋）。<br><br>可以在 T2 航廈享用晚餐，並提早確認登機口位置。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=London+Heathrow+Airport+Terminal+2',
+						imageUrl: 'https://loremflickr.com/600/400/heathrow,airport/all',
+					},
+					{ 
+						time: '21:10', 
+						name: '倫敦 LHR ➔ 都柏林 DUB', 
+						icon: 'fas fa-plane', 
+						desc: '愛爾蘭航空 EI183', 
+						detail: '<b>飛行時間：</b>約 1 小時 20 分。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Dublin+Airport',
+						imageUrl: null,
+					},
+					{ 
+						time: '22:30', 
+						name: '都柏林機場入境', 
+						icon: 'fas fa-passport', 
+						desc: '辦理入境手續、領取托運行李。', 
+						detail: '終於抵達愛爾蘭！領完行李後準備前往飯店。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Dublin+Airport',
+						imageUrl: null,
+						transport: '搭乘飯店免費接駁巴士 → Clayton Hotel (約 10min)', 
+						transportIcon: 'fas fa-bus' 
+					},
+					{ 
+						time: '23:15', 
+						name: 'Clayton Hotel Dublin Airport', 
+						icon: 'fas fa-bed', 
+						desc: '機場旁飯店入住', 
+						detail: '<b>💡 老師的小叮嚀：</b><br>在機場航廈外 Zone 16 搭乘飯店免費接駁巴士（24 小時服務）。長途飛行後建議直接休息，為隔天早上的「右駕挑戰」儲備體力！',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Clayton+Hotel+Dublin+Airport',
+						imageUrl: null,
+					}
+				]
+			},
+			{
+				date: 'Day 2 | 4/4 (Sat)', 
+				title: '自駕首日：都柏林 → 高威', 
+				location: 'Dublin → Athlone → Galway', 
+				weather: '晴時多雲', 
+				isOpen: false,
+				spots: [
+					{ 
+						time: '09:00', 
+						name: 'Avis 租車櫃檯', 
+						icon: 'fas fa-car-side', 
+						desc: '辦理取車手續', 
+						detail: '⚠️ <b>重點檢查：</b>請仔細檢查車身刮痕並錄影存證。<br><br><b>💡 老師的小叮嚀：</b>記得詢問櫃檯：<br><i>"Is the M50 toll included in the rental?"</i>（確認過路費支付方式）。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Avis+Car+Hire+Dublin+Airport',
+						imageUrl: 'https://loremflickr.com/600/400/car,keys/all',
+						transport: '開車 → 都柏林市區 (約 30-40min)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '10:00', 
+						name: 'maggie家', 
+						icon: 'fas fa-suitcase', 
+						desc: '卸下大件行李', 
+						detail: '把不需要帶去西岸的大件行李先安置好，輕裝上陣。',
+						mapUrl: 'https://maps.app.goo.gl/a2MfjE4wNYP9odMf9',
+						imageUrl: null,
+						transport: '開車橫跨愛爾蘭 → Athlone (約 1hr 15min)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '12:15', 
+						name: 'Athlone 補給與午餐', 
+						icon: 'fas fa-shopping-basket', 
+						desc: 'Golden Island Shopping Centre', 
+						detail: '<b>行程重點：</b><br>1. 將車停在商場（停車場寬敞好停）。<br>2. 在 Tesco 採買自駕飲用水與零食（推薦 Tayto 洋芋片、Cadbury 巧克力）。<br>3. 步行跨過河到老城區，參觀全愛最古老的 <b>Sean\'s Bar</b> 或 Athlone 城堡。<br><br><b>🍴 午餐建議：</b><br>想求快可吃商場輕食；想氣氛好推薦老城區的 <i>The Left Bank Bistro</i>。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Golden+Island+Shopping+Centre+Athlone',
+						imageUrl: 'https://loremflickr.com/600/400/supermarket,ireland/all',
+						transport: '開車 → Galway (約 1hr 10min)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '15:40', 
+						name: 'Galway 住宿 Check-in', 
+						icon: 'fas fa-bed', 
+						desc: '抵達高威辦理入住', 
+						detail: '放好行李，準備探索充滿活力的高威市區！',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=16+Lough+Atalia+Rd,+Galway,+H91+N7CX,+Ireland',
+						imageUrl: null,
+					},
+					{ 
+						time: '16:30', 
+						name: '高威市區與拉丁區探索', 
+						icon: 'fas fa-map-marked-alt', 
+						desc: 'Eyre Square ➔ Shop Street ➔ Latin Quarter ➔ Spanish Arch', 
+						detail: '<b>漫步路線：</b><br>穿梭在五顏六色的店面與街頭藝人表演中，記得看看著名的 Claddagh Ring 戒指。<br>一路走到 <b>Spanish Arch (西班牙拱門)</b> 和港邊的 <b>The Long Walk</b>，這裡是拍夕陽與彩色房子絕美倒影的最佳地點！',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=The+Latin+Quarter+Galway',
+						imageUrl: 'https://loremflickr.com/600/400/galway,street/all',
+					},
+					{ 
+						time: '18:30', 
+						name: '晚餐與酒吧音樂體驗', 
+						icon: 'fas fa-beer', 
+						desc: '海鮮大餐與傳統音樂', 
+						detail: '<b>🍴 晚餐推薦 (建議提早候位)：</b><br>• <i>Oscar’s Seafood Bistro</i> (頂級海鮮)<br>• <i>The King\'s Head</i> (道地燉羊肉與巧達湯)<br>• <i>The Dough Bros</i> (歐洲最佳窯烤披薩)<br><br><b>🎵 音樂酒吧 (Pub Sessions)：</b><br>前往 <i>Taaffes Bar</i> 或 <i>The Crane Bar</i> 聽傳統愛爾蘭音樂。<br><b>💡 老師的小叮嚀：</b>可以問酒保 <i>"What\'s the best local craft beer you have on tap?"</i>（推薦試試 Galway Hooker）。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Taaffes+Bar+Galway',
+						imageUrl: 'https://loremflickr.com/600/400/pub,ireland/all',
+					}
+				]
+			},
+			{
+				date: 'Day 3 | 4/5 (Sun)', 
+				title: '壯闊西岸：莫赫懸崖 → 丁格爾', 
+				location: 'Cliffs of Moher → Dingle', 
+				weather: '多雲時陰', 
+				isOpen: false,
+				spots: [
+					{ 
+						time: '08:00', 
+						name: '從 Galway 出發', 
+						icon: 'fas fa-car', 
+						desc: '途經 Burren (布倫萬里石山)', 
+						detail: '早起出發！此時路況通常很好，沿途會經過石灰岩地形的 Burren，景色非常獨特。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=The+Burren+National+Park',
+						imageUrl: 'https://loremflickr.com/600/400/burren,landscape/all',
+						transport: '開車 → 莫赫懸崖 (約 1.5hr)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '09:30', 
+						name: 'Cliffs of Moher (莫赫懸崖)', 
+						icon: 'fas fa-mountain', 
+						desc: '愛爾蘭最壯麗的海岸線', 
+						detail: '<b>💡 導遊筆記：</b><br>這個時間遊客中心剛開放不久，人潮最少，拍照不會到處是人。可以悠閒地往北走到 O\'Brien\'s Tower，或往南走一段懸崖步道。<br><i>(記得先上網預約早鳥門票)</i>',
+						note: '需提前預約 09:30 門票',
+						mapUrl: 'https://maps.app.goo.gl/snsFJkosaiLdoJse7',
+						imageUrl: 'https://loremflickr.com/600/400/cliffsofmoher/all',
+						transport: '開車 → Doolin (約 15min)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '11:45', 
+						name: 'Doolin 午餐', 
+						icon: 'fas fa-utensils', 
+						desc: '品嚐西岸經典海鮮巧達湯', 
+						detail: '<b>🍴 推薦餐廳：</b><br>• <b>Gus O\'Connor\'s Pub：</b>必點 Seafood Chowder 配棕色麵包，極具代表性。<br>• <b>The Ivy Cottage：</b>新鮮酥脆的炸魚薯條 (Fish & Chips)。<br><br>提早抵達剛好避開排隊人潮！',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Gus+O%27Connor%27s+Pub+Doolin',
+						imageUrl: 'https://loremflickr.com/600/400/seafood,chowder/all',
+						transport: '開車 → Killimer 碼頭 (約 1hr 15min)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '14:30', 
+						name: '搭乘 Shannon Ferry 渡輪', 
+						icon: 'fas fa-ship', 
+						desc: '連人帶車橫越峽灣', 
+						detail: '船程約 20 分鐘。這段航程可以下車吹吹海風，稍微緩解駕駛疲勞。<br>⚠️ 渡輪通常每小時 00/30 分發車，留意時間。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Shannon+Ferry+Killimer',
+						imageUrl: 'https://loremflickr.com/600/400/ferry,car/all',
+						transport: '搭乘渡輪並開車 → Dingle 半島 (約 2hr 15min)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '17:30', 
+						name: '抵達 Dingle 辦理入住', 
+						icon: 'fas fa-bed', 
+						desc: '野性大西洋之路 (Wild Atlantic Way) 完美落腳處', 
+						detail: '<b>💡 導遊筆記：</b><br>如果體力許可，進入半島前可繞經 <b>Conor Pass</b>（愛爾蘭最高山路，俯瞰半島絕景）。<br><br>抵達後在鎮上散步逛彩色小店。晚餐後強烈推薦去 <b>Dick Mack\'s</b> 喝杯當地釀的啤酒，感受獨特的「皮革店兼酒吧」氛圍。',
+						mapUrl: 'https://maps.app.goo.gl/h154mGN9fYvaLrZ18',
+						imageUrl: 'https://loremflickr.com/600/400/dingle,ireland/all',
+					}
+				]
+			},
+			{
+				date: 'Day 4 | 4/6 (Mon)', 
+				title: '半島環遊：Dingle → Killarney', 
+				location: 'Slea Head Drive → Killarney', 
+				weather: '晴時多雲', 
+				isOpen: false,
+				spots: [
+					{ 
+						time: '09:00', 
+						name: 'Slea Head Drive 起點 (從 Dingle 出發)', 
+						icon: 'fas fa-car', 
+						desc: '全長 47 公里的環狀景觀公路', 
+						detail: '⚠️ <b>強烈建議：【順時針方向】行駛！</b><br>這段路非常窄（通常只能容納一台車），順著當地大巴士的方向開，可以避免狹路相逢要退後讓車的困擾。',
+						note: '請將地圖設為離線使用',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Dingle+Kerry',
+						imageUrl: 'https://loremflickr.com/600/400/road,ireland/all',
+						transport: '開車順時針行駛 → Ventry Beach (約 15min)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '09:15', 
+						name: 'Ventry Beach', 
+						icon: 'fas fa-umbrella-beach', 
+						desc: '絕美的半月形沙灘', 
+						detail: '早晨第一站，在這裡短暫停留欣賞壯麗的半月形海岸線，感受愛爾蘭西岸清晨的海風。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Ventry+Beach+Kerry',
+						imageUrl: 'https://loremflickr.com/600/400/beach,sand/all',
+						transport: '開車 → Beehive Huts (約 10min)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '09:45', 
+						name: 'Beehive Huts (Fahan)', 
+						icon: 'fas fa-campground', 
+						desc: '古代修士居住的蜂巢式石屋', 
+						detail: '這些沒有使用任何灰泥接合的古老石屋群，展現了早期愛爾蘭修士的建築智慧。停下來走走看看，彷彿穿越時空。<br><i>*建議停留約 30 分鐘。</i>',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Fahan+Beehive+Huts+Kerry',
+						imageUrl: 'https://loremflickr.com/600/400/stone,hut,ireland/all',
+						transport: '開車 → Dunmore Head (約 10min)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '10:25', 
+						name: 'Dunmore Head', 
+						icon: 'fas fa-mountain', 
+						desc: '愛爾蘭本島最西端', 
+						detail: '🎬 <b>導遊筆記：</b> 這裡是愛爾蘭本島的最西端，同時也是《星際大戰：最後的絕地武士》的經典拍攝地！站在懸崖邊眺望 Blasket 群島，景色極致震撼。<br><i>*建議停留拍照約 35 分鐘。</i>',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Dunmore+Head+Kerry',
+						imageUrl: 'https://loremflickr.com/600/400/cliff,starwars/all',
+						transport: '開車 → Coumeenoole Beach (約 5min)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '11:05', 
+						name: 'Coumeenoole Beach', 
+						icon: 'fas fa-water', 
+						desc: '驚險的懸崖沙灘', 
+						detail: '被群山與懸崖環繞的隱秘沙灘。雖然因為海流強烈不適合游泳，但拍起照來充滿野性大西洋的狂野之美。<br><i>*建議停留約 30 分鐘。</i>',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Coumeenoole+Beach+Kerry',
+						imageUrl: 'https://loremflickr.com/600/400/ocean,waves,cliff/all',
+						transport: '開車 → Gallarus Oratory (約 20min)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '11:55', 
+						name: 'Gallarus Oratory', 
+						icon: 'fas fa-place-of-worship', 
+						desc: '保存完美的 12 世紀古老石造小教堂', 
+						detail: '這座外型像一艘倒扣小船的石造禮拜堂，歷經千年風雨依然滴水不漏，是愛爾蘭早期基督教建築的奇蹟。<br><i>*建議停留約 20 分鐘。</i>',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Gallarus+Oratory+Kerry',
+						imageUrl: 'https://loremflickr.com/600/400/stone,church/all',
+						transport: '開車返回 Dingle 鎮 (約 15min)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '12:30', 
+						name: 'Dingle 鎮午餐與最後巡禮', 
+						icon: 'fas fa-ice-cream', 
+						desc: '必吃海鹽冰淇淋', 
+						detail: '順利環島一圈回到鎮上休息！午餐推薦名店 <i>The Fish Box</i>。<br>甜點千萬別錯過 <b>Murphy’s Ice Cream</b>（必點：Dingle Sea Salt 海鹽口味）！',
+						mapUrl: 'https://maps.app.goo.gl/atnafqYoHi37arEk6',
+						imageUrl: 'https://loremflickr.com/600/400/icecream,ireland/all',
+						transport: '開車走 N70 → Inch Beach (約 45min)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '15:00', 
+						name: 'Inch Beach (途經停靠)', 
+						icon: 'fas fa-umbrella-beach', 
+						desc: '可將車開上沙灘的超長海岸線', 
+						detail: '沿途會經過這個著名的海灘，建議停留 20 分鐘，下車踩踩沙、吹吹風再繼續上路。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Inch+Beach+Kerry',
+						imageUrl: 'https://loremflickr.com/600/400/beach,ireland/all',
+						transport: '開車 → Killarney (約 1hr)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '16:30', 
+						name: 'Killarney Check-in', 
+						icon: 'fas fa-bed', 
+						desc: '抵達愛爾蘭最受歡迎的觀光小鎮', 
+						detail: '辦理入住，稍微休息。這裡生活機能非常發達。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Killarney+Kerry',
+						imageUrl: null,
+					},
+					{ 
+						time: '18:00', 
+						name: '國家公園前哨站：物資補給', 
+						icon: 'fas fa-shopping-cart', 
+						desc: 'Tesco 或 Dunnes Stores', 
+						detail: '<b>🛒 明日野餐採買清單：</b><br>• 大瓶飲用水<br>• 野餐食物 (推薦 Dunnes 的 Deli 現做三明治、水果)<br>• 零食補給',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Tesco+Killarney',
+						imageUrl: null,
+					},
+					{ 
+						time: '19:00', 
+						name: '鎮上漫步與晚餐', 
+						icon: 'fas fa-music', 
+						desc: '感受充滿活力的現場音樂', 
+						detail: '基拉尼鎮中心非常熱鬧，有很多精緻的傳統羊毛製品店可以逛。<br>晚上推薦去 <b>The Grand</b> 或 <b>Murphy\'s Bar</b> 喝一杯，享受熱情的現場愛爾蘭音樂！',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Murphy+Bar+Killarney',
+						imageUrl: 'https://loremflickr.com/600/400/killarney,pub/all',
+					}
+				]
+			},
+			{
+				date: 'Day 5 | 4/7 (Tue)', 
+				title: '湖光山色：基拉尼 → 都柏林', 
+				location: 'Killarney National Park → Dublin', 
+				weather: '晴朗', 
+				isOpen: false,
+				spots: [
+					{ 
+						time: '09:30', 
+						name: 'Ladies View', 
+						icon: 'fas fa-camera', 
+						desc: '國家公園精華懶人包：第一站', 
+						detail: '把車停在路邊，走到看台俯瞰基拉尼三湖的壯麗景色。這是維多利亞女王侍女們最愛的觀景點！<br><i>#停車即看 #明信片視角</i>',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Ladies+View+Killarney',
+						imageUrl: 'https://loremflickr.com/600/400/ladiesview,ireland/all',
+						transport: '開車 → Torc Waterfall (約 20min)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '10:30', 
+						name: 'Torc Waterfall', 
+						icon: 'fas fa-water', 
+						desc: '國家公園精華懶人包：第二站', 
+						detail: '走最短路徑（只需 5 分鐘）就能看到愛爾蘭最具代表性的瀑布，享受滿滿的森林芬多精。<br><i>#森林芬多精 #打卡景點</i>',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Torc+Waterfall+Killarney',
+						imageUrl: 'https://loremflickr.com/600/400/waterfall,forest/all',
+						transport: '開車 → Muckross Lake (約 10min)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '11:30', 
+						name: 'Muckross Lake 湖畔野餐', 
+						icon: 'fas fa-sandwich', 
+						desc: '國家公園精華懶人包：第三站', 
+						detail: '拿出昨天買的三明治和 Tayto 洋芋片，在湖邊草地享受最後的西岸寧靜與大自然。<br><i>#省時省錢 #風景無價</i>',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Muckross+Lake+Killarney',
+						imageUrl: 'https://loremflickr.com/600/400/picnic,lake/all',
+						transport: '開車走 M7 高速公路 → Barack Obama Plaza (約 2hr)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '16:00', 
+						name: 'Barack Obama Plaza (休息站)', 
+						icon: 'fas fa-coffee', 
+						desc: '公路旅行必停補給點', 
+						detail: '一路向東的休息站！這裡除了好停車，二樓還有一個關於美國前總統奧巴馬祖先尋根的迷你展覽，非常有趣。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Barack+Obama+Plaza',
+						imageUrl: null,
+						transport: '開車 → 都柏林市區 (約 1.5hr)', 
+						transportIcon: 'fas fa-car' 
+					},
+					{ 
+						time: '18:30', 
+						name: '都柏林 Check-in', 
+						icon: 'fas fa-bed', 
+						desc: '抵達市區飯店，把行李全部搬下車', 
+						detail: '<b>⚠️ 備註：</b>車內清空，貴重物品絕對不要留在車上！',
+						mapUrl: 'https://maps.app.goo.gl/XTadpef68cYAyATw5',
+						imageUrl: null,
+						transport: '步行 → 晚餐地點', 
+						transportIcon: 'fas fa-walking' 
+					},
+					{ 
+						time: '19:30', 
+						name: '都柏林晚餐', 
+						icon: 'fas fa-utensils', 
+						desc: '找間熱鬧的 Pub 吃炸魚薯條或漢堡', 
+						detail: '<b>🍺 備註：</b>推薦去 <b>Temple Bar 區</b> 感受氣氛。一定要在那間最著名的紅牆酒吧（The Temple Bar）門口拍張照，感受這區最狂野的夜生活氛圍！',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Temple+Bar+Dublin',
+						imageUrl: 'https://loremflickr.com/600/400/templebar,dublin/all',
+					}
+				]
+			},
+			{
+				date: 'Day 6 | 4/8 (Wed)', 
+				title: '城市狂歡：都柏林市區探索', 
+				location: 'Dublin City Center', 
+				weather: '多雲', 
+				isOpen: false,
+				spots: [
+					{ 
+						time: '10:00', 
+						name: '三一學院 (Trinity College)', 
+						icon: 'fas fa-university', 
+						desc: '哈利波特般的長廊圖書館', 
+						detail: '<b>重點參觀：</b>長廊圖書館 (Long Room) 與 凱爾斯之書 (Book of Kells)。<br><br>⚠️ <b>小撇步：</b>門票一定要先上網預訂，不然現場會排到想哭！',
+						note: '確認門票已預約',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Trinity+College+Dublin',
+						imageUrl: 'https://loremflickr.com/600/400/library,trinitycollege/all',
+						transport: '步行 → Grafton Street (約 10min)', 
+						transportIcon: 'fas fa-walking' 
+					},
+					{ 
+						time: '12:30', 
+						name: 'Grafton Street 散步與午餐', 
+						icon: 'fas fa-shopping-bag', 
+						desc: '都柏林的靈魂商店街', 
+						detail: '這裡的街頭藝人（Busking）水準是世界級的，邊逛街邊享受音樂。<br><br><b>🍔 午餐推薦：</b> <i>Bunsen</i>（專賣漢堡，菜單極簡，簡單暴力又好吃）。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Grafton+Street+Dublin',
+						imageUrl: 'https://loremflickr.com/600/400/graftonstreet/all',
+						transport: '步行或搭公車 → 健力士倉庫 (約 25min)', 
+						transportIcon: 'fas fa-walking' 
+					},
+					{ 
+						time: '14:30', 
+						name: '健力士倉庫 (Guinness Storehouse)', 
+						icon: 'fas fa-beer', 
+						desc: '酒鬼之旅：黑啤酒發源地', 
+						detail: '參觀從原料到釀造的全紀錄。<br><b>✨ 必做：</b>憑門票到頂樓的 <b>Gravity Bar</b> 換一杯免費的新鮮黑啤，一邊喝酒一邊俯瞰都柏林 360 度的全景。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Guinness+Storehouse+Dublin',
+						imageUrl: 'https://loremflickr.com/600/400/guinness,beer/all',
+						transport: '步行或搭公車 → 利菲河畔 (約 25min)', 
+						transportIcon: 'fas fa-bus' 
+					},
+					{ 
+						time: '17:30', 
+						name: '利菲河畔散步與晚餐', 
+						icon: 'fas fa-bridge-water', 
+						desc: '半圓拱橋與浪漫河景', 
+						detail: '<b>📸 必拍地點：</b> 半圓拱橋 (Ha\'penny Bridge)。<br><br><b>🍴 晚餐建議：</b> <i>The Winding Stair</i><br>這是一間書店與餐廳的完美結合，位於河邊，氣氛極佳且食物很有質感，為愛爾蘭之旅畫下完美句點。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Ha%27penny+Bridge+Dublin',
+						imageUrl: 'https://loremflickr.com/600/400/hapennybridge/all',
+					}
+				]
+			},
+			{
+				date: 'Day 7 | 4/9 (Thu)', 
+				title: '跨海移動：都柏林 → 倫敦西區', 
+				location: 'DUB → LHR → London', 
+				weather: '多雲時晴', 
+				isOpen: false,
+				spots: [
+					{ 
+						time: '09:00', 
+						name: 'Dublin Airport 還車', 
+						icon: 'fas fa-car-crash', 
+						desc: 'Avis 櫃檯辦理手續', 
+						detail: '<b>💡 小叮嚀：</b><br>還車前記得將油箱加滿，並保留加油收據。交車時再次錄影車身現況以備查驗。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Avis+Car+Hire+Dublin+Airport',
+						imageUrl: null,
+						transport: '步行 → T2 航廈', 
+						transportIcon: 'fas fa-walking' 
+					},
+					{ 
+						time: '10:00', 
+						name: '都柏林機場 (DUB) 候機', 
+						icon: 'fas fa-passport', 
+						desc: '第 2 航廈 (T2)', 
+						detail: '辦理登機、行李託運與安檢。可以在免稅店做最後的愛爾蘭伴手禮採買。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Dublin+Airport+Terminal+2',
+						imageUrl: null,
+					},
+					{ 
+						time: '12:30', 
+						name: '都柏林 DUB ➔ 倫敦 LHR', 
+						icon: 'fas fa-plane', 
+						desc: '愛爾蘭航空 EI160', 
+						detail: '<b>飛行時間：</b>約 1 小時 25 分。<br>短暫的飛行，準備迎接英倫風情！',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=London+Heathrow+Airport',
+						imageUrl: null,
+						transport: '搭乘 Elizabeth Line → Farringdon 站 (約 35min)', 
+						transportIcon: 'fas fa-train' 
+					},
+					{ 
+						time: '14:30', 
+						name: '抵達倫敦 ➔ 前往住宿', 
+						icon: 'fas fa-subway', 
+						desc: '搭乘 Elizabeth Line 至 Farringdon 站', 
+						detail: '車程約 35 分鐘。出站後轉搭公車（如 19, 38 路）或步行約 12-15 分鐘即可抵達住宿點。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Farringdon+Station+London',
+						imageUrl: null,
+					},
+					{ 
+						time: '15:30', 
+						name: 'Charles Rowan House', 
+						icon: 'fas fa-home', 
+						desc: 'Check-in 放行李', 
+						detail: '這棟建築是倫敦知名的歷史社會住宅，外觀非常有特色。安頓好行李，稍作休息準備出門逛逛。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Charles+Rowan+House+London',
+						imageUrl: 'https://loremflickr.com/600/400/london,brickbuilding/all',
+						transport: '搭乘公車或步行 → 柯芬園 Covent Garden (約 20min)', 
+						transportIcon: 'fas fa-bus' 
+					},
+					{ 
+						time: '16:30', 
+						name: '倫敦西區輕鬆散步', 
+						icon: 'fas fa-store', 
+						desc: 'Covent Garden ➔ Seven Dials', 
+						detail: '<b>漫步重點：</b><br>• <b>Covent Garden (柯芬園)：</b> 逛市集、看精彩的街頭藝人表演。<br>• <b>Seven Dials：</b> 感受倫敦七條街道交匯的獨特景致。<br>• <b>Neal’s Yard：</b> 隱身在巷弄中的七彩庭院，非常適合拍照打卡！',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Covent+Garden+London',
+						imageUrl: 'https://loremflickr.com/600/400/coventgarden/all',
+					},
+					{ 
+						time: '19:30', 
+						name: '晚餐與漫步', 
+						icon: 'fas fa-utensils', 
+						desc: 'Seven Dials Market 美食街', 
+						detail: '這裡有各國特色美食，選擇多樣氣氛輕鬆。<br><br><b>💡 老師的小叮嚀：</b><br>住宿點 Margery St 附近相對安靜，吃飽回程時建議走主要道路（如 Farringdon Rd 或 Amwell St）比較明亮安全。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Seven+Dials+Market+London',
+						imageUrl: 'https://loremflickr.com/600/400/london,night,street/all',
+					}
+				]
+			},
+			{
+				date: 'Day 8 | 4/10 (Fri)', 
+				title: '英倫經典：西敏區與音樂劇', 
+				location: 'Westminster → West End', 
+				weather: '多雲', 
+				isOpen: false,
+				spots: [
+					{ 
+						time: '09:30', 
+						name: '西敏寺與大笨鐘巡禮', 
+						icon: 'fas fa-church', 
+						desc: '倫敦最經典地標', 
+						detail: '參觀西敏寺內部（建議預訂 09:30 首批入場門票以避開人潮），接著漫步至大笨鐘 (Big Ben) 拍下經典的倫敦街景照。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Westminster+Abbey+London',
+						imageUrl: 'https://loremflickr.com/600/400/bigben,london/all',
+						transport: '步行 → 倫敦眼 (約 10min)', 
+						transportIcon: 'fas fa-walking' 
+					},
+					{ 
+						time: '12:00', 
+						name: '倫敦眼 (London Eye) 與午餐', 
+						icon: 'fas fa-eye', 
+						desc: '俯瞰泰晤士河全景', 
+						detail: '搭乘摩天輪從高空視角欣賞倫敦市區。結束後在附近簡單享用午餐。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=London+Eye',
+						imageUrl: 'https://loremflickr.com/600/400/londoneye/all',
+						transport: '步行穿越公園 → 白金漢宮與美術館 (約 30min)', 
+						transportIcon: 'fas fa-walking' 
+					},
+					{ 
+						time: '13:30', 
+						name: '皇室風情與美術館', 
+						icon: 'fas fa-palette', 
+						desc: '聖詹姆士公園 ➔ 白金漢宮 ➔ 國家美術館', 
+						detail: '穿越綠意盎然的聖詹姆士公園看天鵝，走到白金漢宮感受皇室氣派，最後抵達特拉法加廣場旁的 <b>國家美術館 (National Gallery)</b> 欣賞名畫。<br><br>💡 週五美術館開放至 21:00，若時間充足可慢慢逛。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=National+Gallery+London',
+						imageUrl: 'https://loremflickr.com/600/400/nationalgallery,london/all',
+						transport: '步行 → 唐人街 (約 15min)', 
+						transportIcon: 'fas fa-walking' 
+					},
+					{ 
+						time: '16:30', 
+						name: '唐人街 (Chinatown) 晚餐', 
+						icon: 'fas fa-bowl-rice', 
+						desc: '音樂劇前的能量補充', 
+						detail: '步行前往唐人街，這裡有道地的烤鴨、中式麵食與手搖飲，在看劇前先溫暖一下亞洲胃。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Chinatown+London',
+						imageUrl: 'https://loremflickr.com/600/400/chinatown,london/all',
+						transport: '步行 → Sondheim 劇院 (約 5min)', 
+						transportIcon: 'fas fa-walking' 
+					},
+					{ 
+						time: '19:30', 
+						name: '音樂劇《悲慘世界》', 
+						icon: 'fas fa-theater-masks', 
+						desc: 'Sondheim Theatre', 
+						detail: '欣賞西區最經典不敗的音樂劇，感受震撼的現場舞台魅力！<br><br><b>💡 小叮嚀：</b> 演出結束後，可直接搭乘 38 路公車直達住宿點附近，安全又省時。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Sondheim+Theatre+London',
+						imageUrl: 'https://loremflickr.com/600/400/theater,london/all',
+					}
+				]
+			},
+			{
+				date: 'Day 9 | 4/11 (Sat)', 
+				title: '歷史迴廊：大英博物館與東倫敦', 
+				location: 'British Museum → Tower Bridge', 
+				weather: '晴', 
+				isOpen: false,
+				spots: [
+					{ 
+						time: '09:40', 
+						name: '漫步前往大英博物館', 
+						icon: 'fas fa-shoe-prints', 
+						desc: '體驗倫敦早晨街道', 
+						detail: '從住宿點出發，沿著 Amwell St 向南走，步行約 18-20 分鐘即可抵達博物館。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=British+Museum+London',
+						imageUrl: null,
+					},
+					{ 
+						time: '10:10', 
+						name: '大英博物館 (British Museum)', 
+						icon: 'fas fa-landmark', 
+						desc: '探索人類歷史瑰寶', 
+						detail: '⚠️ 即使有預約，排隊過安檢仍需時間，建議提前抵達。<br><br><b>👀 必看重點：</b><br>• 羅塞塔石碑（2 號展廳）<br>• 木乃伊區（62-63 號展廳）<br>• 帕德嫩神廟雕塑（18 號展廳）',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=British+Museum+London',
+						imageUrl: 'https://loremflickr.com/600/400/britishmuseum/all',
+						transport: '搭乘地鐵 Central Line → 倫敦塔區 (約 30min)', 
+						transportIcon: 'fas fa-subway' 
+					},
+					{ 
+						time: '13:10', 
+						name: '午餐 & 前往倫敦塔區', 
+						icon: 'fas fa-hamburger', 
+						desc: '移動至 Tower Hill', 
+						detail: '在大英博物館附近吃完午餐後，搭地鐵前往充滿歷史底蘊的東倫敦。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Tower+Hill+Station+London',
+						imageUrl: null,
+					},
+					{ 
+						time: '14:30', 
+						name: '倫敦塔 & 倫敦塔橋', 
+						icon: 'fas fa-chess-rook', 
+						desc: '見證英國王室歷史', 
+						detail: '參觀倫敦塔（Tower of London）。<br><b>💡 小叮嚀：</b>若想看王冠珠寶，建議一進去就先衝 <b>Jewel House</b> 排隊。<br><br>接著走上標誌性的<b>倫敦塔橋 (Tower Bridge)</b>，拍下絕美的泰晤士河風景。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Tower+Bridge+London',
+						imageUrl: 'https://loremflickr.com/600/400/towerbridge/all',
+						transport: '沿泰晤士河岸步行或搭公車 → 聖保羅大教堂 (約 25min)', 
+						transportIcon: 'fas fa-walking' 
+					},
+					{ 
+						time: '16:30', 
+						name: '聖保羅大教堂 & 千禧橋', 
+						icon: 'fas fa-place-of-worship', 
+						desc: '壯觀的巨大圓頂', 
+						detail: '走上<b>千禧橋 (Millennium Bridge)</b>（哈利波特電影場景），這裡是拍攝聖保羅大教堂正面圓頂的最佳對稱角度！<br><i>(週六內部參觀最晚通常是 16:00，若晚了在外面黃昏拍照也非常美)</i>',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Millennium+Bridge+London',
+						imageUrl: 'https://loremflickr.com/600/400/stpauls,london/all',
+						transport: '搭乘地鐵或公車 → 攝政街 / 南岸', 
+						transportIcon: 'fas fa-subway' 
+					},
+					{ 
+						time: '18:30', 
+						name: '市區散策 (二選一)', 
+						icon: 'fas fa-lightbulb', 
+						desc: '購物之夜 vs 浪漫河畔', 
+						detail: '<b>🅰️ 攝政街 (Regent Street) 燈火購物：</b>搭到 Oxford Circus，欣賞全倫敦最壯觀的弧形街道與旗艦店霓虹燈。<br><b>🅱️ 南岸 (South Bank) 河濱漫步：</b>穿過千禧橋一路散步回倫敦眼，沿路有市集與街頭表演，夜景浪漫。<br><br>結束後搭乘 38 或 19 路公車回 Angel 區住宿。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Regent+Street+London',
+						imageUrl: 'https://loremflickr.com/600/400/regentstreet,london/all',
+					}
+				]
+			},
+			{
+				date: 'Day 10 | 4/12 (Sun)', 
+				title: '血拼狂歡：Bicester Village', 
+				location: 'Marylebone → Bicester', 
+				weather: '晴時多雲', 
+				isOpen: false,
+				spots: [
+					{ 
+						time: '08:30', 
+						name: '前往 Marylebone 車站', 
+						icon: 'fas fa-train', 
+						desc: '準備搭火車前往 Outlet', 
+						detail: '從住宿點搭乘 205 路公車或 Uber 直達車站。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Marylebone+Station+London',
+						imageUrl: null,
+						transport: '搭乘 Chiltern Railways 火車 → Bicester Village (約 1hr)', 
+						transportIcon: 'fas fa-train' 
+					},
+					{ 
+						time: '09:30', 
+						name: '火車前往 Bicester Village', 
+						icon: 'fas fa-ticket-alt', 
+						desc: '欣賞沿途英國鄉間風光', 
+						detail: '<b>💡 小叮嚀：</b>建議事先在 Trainline App 買好來回票，通常比現場買便宜。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Bicester+Village+Station',
+						imageUrl: null,
+					},
+					{ 
+						time: '11:00', 
+						name: 'Bicester Village 購物時間', 
+						icon: 'fas fa-shopping-bag', 
+						desc: '英國必逛精品 Outlet', 
+						detail: '準備大開殺戒！Gucci, Prada, Loewe 等各大品牌應有盡有。<br><br>⚠️ <b>注意：</b>英國週日法律規定商店 11:00 才開門，且下午 17:00-18:00 就會提早打烊，請把握黃金採買時間。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Bicester+Village',
+						imageUrl: 'https://loremflickr.com/600/400/shopping,bicester/all',
+						transport: '搭乘火車 → 倫敦 Marylebone 站 (約 1hr)', 
+						transportIcon: 'fas fa-train' 
+					},
+					{ 
+						time: '18:00', 
+						name: '返回倫敦與晚餐', 
+						icon: 'fas fa-moon', 
+						desc: '滿載而歸', 
+						detail: '搭火車回到 Marylebone 站。晚上可以在住宿附近的 Angel 區找間溫馨的餐廳吃飯休息。<br><br><b>💡 老師的小叮嚀：</b>提著大包小包的戰利品，建議出站後直接搭 Uber 回 Margery St，省力又安全。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Marylebone+Station+London',
+						imageUrl: null,
+					}
+				]
+			},
+			{
+				date: 'Day 11 | 4/13 (Mon)', 
+				title: '跨越海峽：倫敦 → 巴黎', 
+				location: 'St Pancras → Paris Nord', 
+				weather: '多雲', 
+				isOpen: false,
+				spots: [
+					{ 
+						time: '06:15', 
+						name: '前往 St Pancras 車站', 
+						icon: 'fas fa-taxi', 
+						desc: '準備搭乘歐洲之星', 
+						detail: '清晨提著大行李最辛苦，強烈建議直接搭乘 Uber / Bolt（車程約 10 分鐘）前往車站。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=St+Pancras+International+London',
+						imageUrl: null,
+					},
+					{ 
+						time: '06:40', 
+						name: 'Eurostar 報到與過關', 
+						icon: 'fas fa-passport', 
+						desc: '同時辦理出入境', 
+						detail: '⚠️ <b>務必準時抵達！</b><br>搭乘歐洲之星需「同時」辦理英國出境與法國入境手續。安檢與通關約需 45-60 分鐘，請預留充足時間。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=St+Pancras+International+London',
+						imageUrl: 'https://loremflickr.com/600/400/stpancras,station/all',
+						transport: '搭乘 Eurostar 801 高速鐵路 → 巴黎北站 (約 2hr 16min)', 
+						transportIcon: 'fas fa-train' 
+					},
+					{ 
+						time: '08:01', 
+						name: '倫敦 ➔ 巴黎北站', 
+						icon: 'fas fa-train', 
+						desc: 'Eurostar 801 車次', 
+						detail: '穿越英吉利海峽隧道，好好在車上補個眠吃個早餐。<br><br>⏰ <b>時差提醒：</b>跨越時區，抵達巴黎後時間會<b>快一小時</b>！',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Gare+du+Nord+Paris',
+						imageUrl: 'https://loremflickr.com/600/400/eurostar,train/all',
+					},
+					{ 
+						time: '11:17', 
+						name: '抵達巴黎 (Paris Nord)', 
+						icon: 'fas fa-flag', 
+						desc: 'Bonjour Paris!', 
+						detail: '抵達浪漫之都巴黎！<br><br>⚠️ <b>防竊警告：</b>巴黎北站人多雜亂，出站時請務必提高警覺，看好隨身包包與行李。強烈建議直接預約 Uber 前往飯店，避免在車站內迷失方向或被盯上。',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Gare+du+Nord+Paris',
+						imageUrl: 'https://loremflickr.com/600/400/paris,street/all',
+					}
+				]
+			}
+		]);
+			
+			// ==========================================
+            // --- 全本機私有化儲存 (Local Storage) ---
+            // ==========================================
+            // 2. 定義需要快取的【私有私密資料】對照表 (LocalStorage)
+            const privateStorageKeys = {
+                'europe_trip_private_shopping': shoppingList,
+                'europe_trip_private_packing': packingList,
+                'europe_trip_private_expenses': expenseList,
+                'europe_trip_private_todos': todoList,
+                'europe_trip_private_tickets': ticketList
+            };
+
+            // 2. 網頁載入時，一次性把所有快取資料倒回來
+            // 3. 生命週期：網頁載入時
+            onMounted(() => {
+                // (A) 私有資料：一次性把所有本機快取倒回來
+                for (const [key, refVar] of Object.entries(privateStorageKeys)) {
+                    const savedData = localStorage.getItem(key);
+                    if (savedData) {
+                        refVar.value = JSON.parse(savedData);
+                    }
+                }
+                
+                // (B) 共享行程照片：只從雲端讀取
+                tripRef.child('itinerary').once('value')
+                    .then((snapshot) => {
+                        const cloudItinerary = snapshot.val();
+                        if (cloudItinerary) {
+                            itinerary.value = cloudItinerary; // 將雲端的行程倒進 APP
+                        }
+                    })
+                    .catch(err => {
+                        console.error("雲端共享照片讀取失敗，將使用本機預設：", err);
+                    });
+            });
+
+            // 4. 設定深度監聽，畫面有任何修改就自動存檔 (本機 vs 共享)
+            
+            // (A) 私有資料監聽器 (純本機 LocalStorage)
+            Object.entries(privateStorageKeys).forEach(([key, refVar]) => {
+                watch(refVar, (newVal) => {
+                    localStorage.setItem(key, JSON.stringify(newVal));
+                }, { deep: true });
+            });
+            
+            // (B) 共享行程照片監聽器 (本機 -> 雲端同步)
+            watch(itinerary, (newVal) => {
+                // 如果資料變更是從雲端推下來的 (isSyncingFromCloud == true)，就不要再把它推回去，避免無限迴圈
+                if (isSyncingFromCloud.value || !tripRef) return;
+                
+                console.log("偵測到行程/照片有修改，正在上傳共享專區...");
+                tripRef.child('itinerary').set(newVal); // 把最新行程和 Base64 照片推上雲端
+            }, { deep: true });
+            
+            // (C) 共享行程照片監聽器 (雲端 -> 本機同步)
+            tripRef.child('itinerary').on('value', (snapshot) => {
+                const newCloudItinerary = snapshot.val();
+                if (newCloudItinerary) {
+                    isSyncingFromCloud.value = true; // 鎖住本機推播
+                    itinerary.value = newCloudItinerary; // 更新本機畫面
+                    // 加點延遲，確保畫面渲染完成後再解鎖
+                    nextTick(() => { isSyncingFromCloud.value = false; });
+                }
+            });
+
+            return {
+                isFetchingRates, fetchRealTimeRates,
+				currentTab, calcAmount, calcCurrency, exchangeRates, itinerary, currentDayIndex, weatherForecast, isWeatherOpen,
+                shoppingList, isAddShopOpen, newShopNameInput, addShop, deleteShop, addItemToShop, deleteItem, uploadImage,
+                lightboxImage, openLightbox, closeLightbox,
+                packingList, isAddPackingCatOpen, newPackingCatInput, addPackingCategory, addItemToCategory, deletePackingItem,
+                newExpense, expenseList, totalExpenses, addExpense, deleteExpense, isAddExpenseOpen,
+                groupedExpenses, expenseDayStates, toggleExpenseDay, calculateDayTotal, formatNumber,
+                handleTouchStart, handleTouchEnd,
+                isTodoOpen,todoList, newTodoInput, addTodo, deleteTodo,
+				selectedSpot, openSpotDetail, closeSpotDetail, uploadSpotImage,
+				ticketList, isAddTicketOpen, newTicketName, newTicketUrl, addTicketLink, deleteTicket, uploadTicket, currentTab, infoSubTab,
+            };
+		} // 這是 setup() 的結尾大括號
+    }); // 先結束 createApp
+
+    // ==========================================
+    // --- 圖片懶載入引擎 (全域指令註冊) ---
+    // ==========================================
+    app.directive('lazy', {
+        mounted(el, binding) {
+            const src = binding.value; 
+            if (!src) return;
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        el.src = src; 
+                        observer.unobserve(el);
+                    }
+                });
+            });
+            
+            observer.observe(el);
+        }
+    });
+
+    // 最後一步：把註冊好指令的 app 掛載到畫面上
+    app.mount('#app');
+
+</script>
+</body>
+</html>
