@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>歐洲 11 日狂歡遊</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -19,6 +19,8 @@
             color: #444444;
             -webkit-font-smoothing: antialiased;
             background-color: #E6E4E0; /* 溫和的石材灰底色 */
+            margin: 0;
+            padding: 0;
         }
 
         /* 自定義滾動條 - 柔和的大地色 */
@@ -37,28 +39,28 @@
             z-index: 0;
         }
         
-        /* 隱藏橫向選單的捲動條 */
+        /* 隱藏橫向選單的捲動條 (整併修復版) */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            /* ⚠️ 已經刪除會導致 Android 縮小跑版的 width: calc(100% + 2rem); */
         }
         
-        /* 鎖定全域與滑動設定 */
+        /* 鎖定全域與滑動設定 (修復 Android 縮小與破圖問題) */
         html, body {
             overflow: hidden;
             height: 100%;
             width: 100%;
-            position: fixed;
+            /* ⚠️ 已經刪除會導致高度計算錯誤的 position: fixed; */
             overscroll-behavior-y: none;
+            touch-action: pan-y; /* 確保正常上下滑動 */
         }
+        
         main {
             overscroll-behavior-y: contain;
             -webkit-overflow-scrolling: touch;
-        }
-        .hide-scrollbar {
-            -webkit-overflow-scrolling: touch;
-            width: calc(100% + 2rem);
         }
 
         /* 現代 APP 卡片點擊回饋 */
@@ -77,6 +79,26 @@
         }
 		
         [v-cloak] { display: none; }
+		
+		/* ==========================================
+           跨平台完美適配：iOS 動態島與底部橫條處理
+           ========================================== */
+        /* 1. 讓底部的導航列自動避開 iPhone 的 Home 橫條與 Android 的虛擬按鍵 */
+        nav {
+            padding-bottom: calc(1rem + env(safe-area-inset-bottom)) !important;
+            padding-top: 0.5rem !important;
+            min-height: calc(85px + env(safe-area-inset-bottom));
+        }
+
+        /* 2. 讓頂部的內容避開瀏海或動態島 */
+        main {
+            padding-top: calc(1.25rem + env(safe-area-inset-top)) !important;
+        }
+
+        /* 3. 確保彈出視窗(景點詳情)的關閉按鈕不會被瀏海擋住 */
+        .bg-white.w-full.max-h-\[85\%\].rounded-t-3xl {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen m-0">
