@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>歐洲 11 日狂歡遊</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>歐洲 18 日狂歡遊</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 	<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
@@ -18,8 +18,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             color: #444444;
             -webkit-font-smoothing: antialiased;
-            margin: 0;
-            padding: 0;
+            background-color: #E6E4E0; /* 溫和的石材灰底色 */
         }
 
         /* 自定義滾動條 - 柔和的大地色 */
@@ -38,28 +37,28 @@
             z-index: 0;
         }
         
-        /* 隱藏橫向選單的捲動條 (整併修復版) */
+        /* 隱藏橫向選單的捲動條 */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
-            -webkit-overflow-scrolling: touch;
-            /* ⚠️ 已經刪除會導致 Android 縮小跑版的 width: calc(100% + 2rem); */
         }
         
-        /* 鎖定全域與滑動設定 (修復 Android 縮小與破圖問題) */
+        /* 鎖定全域與滑動設定 */
         html, body {
             overflow: hidden;
             height: 100%;
             width: 100%;
-            /* ⚠️ 已經刪除會導致高度計算錯誤的 position: fixed; */
+            position: fixed;
             overscroll-behavior-y: none;
-            touch-action: pan-y; /* 確保正常上下滑動 */
         }
-        
         main {
             overscroll-behavior-y: contain;
             -webkit-overflow-scrolling: touch;
+        }
+        .hide-scrollbar {
+            -webkit-overflow-scrolling: touch;
+            width: calc(100% + 2rem);
         }
 
         /* 現代 APP 卡片點擊回饋 */
@@ -78,179 +77,68 @@
         }
 		
         [v-cloak] { display: none; }
-		
-		/* ==========================================
-           跨平台完美適配：iOS 動態島與底部橫條處理
-           ========================================== */
-        /* 1. 讓底部的導航列自動避開 iPhone 的 Home 橫條與 Android 的虛擬按鍵 */
-        nav {
-            padding-bottom: calc(1rem + env(safe-area-inset-bottom)) !important;
-            padding-top: 0.5rem !important;
-            min-height: calc(85px + env(safe-area-inset-bottom));
-        }
-
-        /* 3. 確保彈出視窗(景點詳情)的關閉按鈕不會被瀏海擋住 */
-        .bg-white.w-full.max-h-\[85\%\].rounded-t-3xl {
-            padding-bottom: env(safe-area-inset-bottom);
-        }
     </style>
 </head>
-<body class="m-0 bg-[#F7F6F3] sm:bg-[#E6E4E0] sm:flex sm:items-center sm:justify-center min-h-[100dvh]">
+<body class="flex items-center justify-center min-h-screen m-0">
 
-<div class="w-full sm:w-[393px] h-[100dvh] sm:h-[852px] sm:rounded-[40px] sm:border-[8px] sm:border-stone-300 sm:shadow-2xl overflow-hidden relative bg-[#F7F6F3]">
+<div class="w-full sm:w-[393px] h-[100dvh] sm:h-[852px] sm:rounded-[40px] sm:border-[8px] border-stone-300 shadow-2xl overflow-hidden relative bg-[#F7F6F3]">
     
     <div id="app" class="w-full h-full overflow-hidden flex flex-col relative" v-cloak>
 		
         <main
             class="flex-grow overflow-y-auto overflow-x-hidden px-4 space-y-5 pb-8 relative"
-            :style="{ paddingTop: currentTab === 'itinerary' ? '0px' : `calc(1.25rem + env(safe-area-inset-top))` }"
+            :class="currentTab === 'itinerary' ? 'pt-0' : 'pt-5'"
             @touchstart="handleTouchStart"
             @touchend="handleTouchEnd"
         >
             <section v-if="currentTab === 'info'" class="space-y-4 animate-fade-in">
                 
+                <div class="flex bg-slate-200/70 p-1.5 rounded-xl w-full shadow-inner">
+                    <button @click="activeTransportUser = 'Partner0'" :class="activeTransportUser === 'Partner0' ? 'bg-white shadow text-sky-600 font-bold' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-2 text-[13px] rounded-lg transition-all active-scale">團員們</button>
+                    <button @click="activeTransportUser = 'Partner1'" :class="activeTransportUser === 'Partner1' ? 'bg-white shadow text-sky-600 font-bold' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-2 text-[13px] rounded-lg transition-all active-scale">導遊輝</button>
+                    <button @click="activeTransportUser = 'Partner2'" :class="activeTransportUser === 'Partner2' ? 'bg-white shadow text-sky-600 font-bold' : 'text-slate-500 hover:text-slate-700'" class="flex-1 py-2 text-[13px] rounded-lg transition-all active-scale">導遊堯</button>
+                </div>
+
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden relative">
-                    <div class="px-4 py-3 border-b border-slate-50 flex justify-between items-center bg-white">
+                    <div class="px-4 py-3 flex justify-between items-center bg-white border-b border-slate-50">
                         <h3 class="font-semibold text-slate-700 text-base flex items-center">
                             <div class="w-7 h-7 rounded bg-sky-50 text-sky-600 flex items-center justify-center mr-2">
                                 <i class="fas fa-ticket text-xs"></i>
                             </div>
                             跨國交通資訊
                         </h3>
-                        <span class="text-xs font-semibold text-sky-700 bg-sky-100/50 px-2 py-1 rounded">CI081 / EI183 / Eurostar</span>
                     </div>
+					
                     <div class="flex flex-col divide-y divide-slate-50">
-					<div class="p-4">
-						<div class="flex justify-between items-center mb-3">
-							<span class="text-slate-500 text-sm font-semibold flex items-center"><i class="fas fa-plane-departure text-sky-500 mr-1.5"></i> 台北 ➔ 倫敦</span>
-							<span class="text-sm font-medium text-slate-400">04.03 (Fri)</span>
-						</div>
-						<div class="flex justify-between items-center">
-							<div class="w-16">
-								<div class="text-2xl font-bold text-slate-800 leading-none">08:20</div>
-								<div class="text-[13px] text-sky-600 mt-1.5 font-medium bg-sky-50 inline-block px-1.5 rounded">TPE</div>
-							</div>
-							<div class="flex flex-col items-center flex-grow px-4">
-								<div class="text-xs text-slate-400 font-medium mb-1">華航 CI 081</div>
-								<div class="w-full flex items-center">
-									<div class="h-[1px] bg-slate-200 flex-grow"></div>
-									<i class="fas fa-plane text-sky-400 text-sm mx-2"></i>
-									<div class="h-[1px] bg-slate-200 flex-grow"></div>
-								</div>
-								<div class="text-[10px] text-slate-400 font-medium mt-1">15h 10m</div>
-							</div>
-							<div class="w-16 text-right">
-								<div class="text-2xl font-bold text-slate-800 leading-none">16:30</div>
-								<div class="text-[13px] text-sky-600 mt-1.5 font-medium bg-sky-50 inline-block px-1.5 rounded">LHR</div>
-							</div>
-						</div>
-					</div>
-
-					<div class="p-4 bg-emerald-50/20">
-						<div class="flex justify-between items-center mb-3">
-							<span class="text-slate-500 text-sm font-semibold flex items-center"><i class="fas fa-plane text-emerald-500 mr-1.5"></i> 倫敦 ➔ 都柏林</span>
-							<span class="text-sm font-medium text-slate-400">04.03 (Fri)</span>
-						</div>
-						<div class="flex justify-between items-center">
-							<div class="w-16">
-								<div class="text-2xl font-bold text-slate-800 leading-none">21:10</div>
-								<div class="text-[13px] text-emerald-600 mt-1.5 font-medium bg-emerald-50 inline-block px-1.5 rounded">LHR</div>
-							</div>
-							<div class="flex flex-col items-center flex-grow px-4">
-								<div class="text-xs text-slate-400 font-medium mb-1">愛爾蘭航空 EI183</div>
-								<div class="w-full flex items-center">
-									<div class="h-[1px] bg-slate-200 flex-grow"></div>
-									<i class="fas fa-plane text-emerald-400 text-sm mx-2"></i>
-									<div class="h-[1px] bg-slate-200 flex-grow"></div>
-								</div>
-								<div class="text-[10px] text-slate-400 font-medium mt-1">1h 20m</div>
-							</div>
-							<div class="w-16 text-right">
-								<div class="text-2xl font-bold text-slate-800 leading-none">22:30</div>
-								<div class="text-[13px] text-emerald-600 mt-1.5 font-medium bg-emerald-50 inline-block px-1.5 rounded">DUB</div>
-							</div>
-						</div>
-					</div>
-
-					<div class="p-4 bg-indigo-50/30">
-						<div class="flex justify-between items-center mb-3">
-							<span class="text-slate-500 text-sm font-semibold flex items-center"><i class="fas fa-train text-indigo-500 mr-1.5"></i> 倫敦 ➔ 巴黎</span>
-							<span class="text-sm font-medium text-slate-400">04.13 (Mon)</span>
-						</div>
-						<div class="flex justify-between items-center">
-							<div class="w-16">
-								<div class="text-2xl font-bold text-slate-800 leading-none">08:01</div>
-								<div class="text-[13px] text-indigo-600 mt-1.5 font-medium bg-indigo-50 inline-block px-1.5 rounded">STP</div>
-							</div>
-							<div class="flex flex-col items-center flex-grow px-4">
-								<div class="text-xs text-slate-400 font-medium mb-1">Eurostar 801</div>
-								<div class="w-full flex items-center">
-									<div class="h-[1px] bg-slate-200 flex-grow"></div>
-									<i class="fas fa-train text-indigo-400 text-sm mx-2"></i>
-									<div class="h-[1px] bg-slate-200 flex-grow"></div>
-								</div>
-								<div class="text-[10px] text-slate-400 font-medium mt-1">2h 16m</div>
-							</div>
-							<div class="w-16 text-right">
-								<div class="text-2xl font-bold text-slate-800 leading-none">11:17</div>
-								<div class="text-[13px] text-indigo-600 mt-1.5 font-medium bg-indigo-50 inline-block px-1.5 rounded">PAR</div>
-							</div>
-						</div>
-					</div>
-
-					<div class="p-4 bg-purple-50/30">
-						<div class="flex justify-between items-center mb-3">
-							<span class="text-slate-500 text-sm font-semibold flex items-center"><i class="fas fa-train text-purple-500 mr-1.5"></i> 巴黎 ➔ 史特拉斯堡</span>
-							<span class="text-sm font-medium text-slate-400">04.13 (Mon)</span>
-						</div>
-						<div class="flex justify-between items-center">
-							<div class="w-16">
-								<div class="text-2xl font-bold text-slate-800 leading-none">12:46</div>
-								<div class="text-[13px] text-purple-600 mt-1.5 font-medium bg-purple-50 inline-block px-1.5 rounded">EST</div>
-							</div>
-							<div class="flex flex-col items-center flex-grow px-4">
-								<div class="text-xs text-slate-400 font-medium mb-1">TGV 2431</div>
-								<div class="w-full flex items-center">
-									<div class="h-[1px] bg-slate-200 flex-grow"></div>
-									<i class="fas fa-train text-purple-400 text-sm mx-2"></i>
-									<div class="h-[1px] bg-slate-200 flex-grow"></div>
-								</div>
-								<div class="text-[10px] text-slate-400 font-medium mt-1">1h 54m</div>
-							</div>
-							<div class="w-16 text-right">
-								<div class="text-2xl font-bold text-slate-800 leading-none">14:40</div>
-								<div class="text-[13px] text-purple-600 mt-1.5 font-medium bg-purple-50 inline-block px-1.5 rounded">SXB</div>
-							</div>
-						</div>
-					</div>
-
-					<div class="p-4 bg-amber-50/30">
-						<div class="flex justify-between items-center mb-3">
-							<span class="text-slate-500 text-sm font-semibold flex items-center"><i class="fas fa-plane-arrival text-amber-500 mr-1.5"></i> 巴黎 ➔ 台北 (經阿布達比)</span>
-							<span class="text-sm font-medium text-slate-400">04.19 (Sun)</span>
-						</div>
-						<div class="flex justify-between items-center">
-							<div class="w-16">
-								<div class="text-2xl font-bold text-slate-800 leading-none">10:05</div>
-								<div class="text-[13px] text-amber-600 mt-1.5 font-medium bg-amber-50 inline-block px-1.5 rounded">CDG</div>
-							</div>
-							<div class="flex flex-col items-center flex-grow px-4">
-								<div class="text-xs text-slate-400 font-medium mb-1">阿提哈德 EY32 / 898</div>
-								<div class="w-full flex items-center">
-									<div class="h-[1px] bg-slate-200 flex-grow"></div>
-									<i class="fas fa-plane text-amber-400 text-sm mx-2"></i>
-									<div class="h-[1px] bg-slate-200 flex-grow"></div>
-								</div>
-								<div class="text-[10px] text-slate-400 font-medium mt-1">17h 55m</div>
-							</div>
-							<div class="w-16 text-right">
-								<div class="text-2xl font-bold text-slate-800 leading-none">10:00</div>
-								<div class="text-[13px] text-amber-600 mt-1.5 font-medium bg-amber-50 inline-block px-1.5 rounded">TPE</div>
-								<div class="text-[10px] text-slate-400 mt-0.5 font-bold">+1天</div>
-							</div>
-						</div>
-					</div>
-				</div>
+                        <div v-for="(route, index) in transportData[activeTransportUser]" :key="index" :class="['p-4', route.bgColor]">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-slate-500 text-sm font-semibold flex items-center">
+                                    <i :class="[route.icon, route.iconColor, 'mr-1.5']"></i> {{ route.title }}
+                                </span>
+                                <span class="text-sm font-medium text-slate-400">{{ route.date }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div class="w-16">
+                                    <div class="text-2xl font-bold text-slate-800 leading-none">{{ route.depTime }}</div>
+                                    <div :class="['text-[13px] mt-1.5 font-medium inline-block px-1.5 rounded', route.tagColor]">{{ route.depCode }}</div>
+                                </div>
+                                <div class="flex flex-col items-center flex-grow px-4">
+                                    <div class="text-xs text-slate-400 font-medium mb-1">{{ route.flightNo }}</div>
+                                    <div class="w-full flex items-center">
+                                        <div class="h-[1px] bg-slate-200 flex-grow"></div>
+                                        <i :class="[route.midIcon, route.midIconColor, 'text-sm mx-2']"></i>
+                                        <div class="h-[1px] bg-slate-200 flex-grow"></div>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 font-medium mt-1">{{ route.duration }}</div>
+                                </div>
+                                <div class="w-16 text-right">
+                                    <div class="text-2xl font-bold text-slate-800 leading-none">{{ route.arrTime }}</div>
+                                    <div :class="['text-[13px] mt-1.5 font-medium inline-block px-1.5 rounded', route.tagColor]">{{ route.arrCode }}</div>
+                                    <div v-if="route.nextDay" class="text-[10px] text-slate-400 mt-0.5 font-bold">+1天</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex border-b border-slate-200 mt-2 mb-2 sticky top-0 z-20 bg-[#F7F6F3] pt-2">
@@ -364,8 +252,7 @@
 
             <section v-if="currentTab === 'itinerary'" class="space-y-4 animate-fade-in">
                 <div 
-                    class="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md pb-3 flex overflow-x-auto space-x-3 flex-shrink-0 hide-scrollbar -mx-4 px-4 border-b border-slate-200"
-                    style="padding-top: calc(0.75rem + env(safe-area-inset-top));"
+                    class="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md pt-3 pb-3 flex overflow-x-auto space-x-3 flex-shrink-0 hide-scrollbar -mx-4 px-4 border-b border-slate-200"
                     @touchstart.stop 
                     @touchend.stop
                 >
@@ -928,6 +815,89 @@
                 };
             };
 			const infoSubTab = ref('tickets');
+			// ▼▼▼ 新增：動態交通資訊資料結構 ▼▼▼
+            const activeTransportUser = ref('Michelle'); 
+            const transportData = ref({
+                'Partner0': [
+                    {
+                        title: '台北 ➔ 倫敦', date: '04.03 (Fri)',
+                        depTime: '08:20', depCode: 'TPE',
+                        arrTime: '16:30', arrCode: 'LHR',
+                        flightNo: '華航 CI 081', duration: '15h 10m', nextDay: false,
+                        icon: 'fas fa-plane-departure', iconColor: 'text-sky-500', midIcon: 'fas fa-plane', midIconColor: 'text-sky-400',
+                        bgColor: '', tagColor: 'text-sky-600 bg-sky-50'
+                    },
+                    {
+                        title: '倫敦 ➔ 都柏林', date: '04.03 (Fri)',
+                        depTime: '21:10', depCode: 'LHR',
+                        arrTime: '22:30', arrCode: 'DUB',
+                        flightNo: '愛爾蘭航空 EI183', duration: '1h 20m', nextDay: false,
+                        icon: 'fas fa-plane', iconColor: 'text-emerald-500', midIcon: 'fas fa-plane', midIconColor: 'text-emerald-400',
+                        bgColor: 'bg-emerald-50/20', tagColor: 'text-emerald-600 bg-emerald-50'
+                    },
+                    {
+                        title: '倫敦 ➔ 巴黎', date: '04.13 (Mon)',
+                        depTime: '08:01', depCode: 'STP',
+                        arrTime: '11:17', arrCode: 'PAR',
+                        flightNo: 'Eurostar 801', duration: '2h 16m', nextDay: false,
+                        icon: 'fas fa-train', iconColor: 'text-indigo-500', midIcon: 'fas fa-train', midIconColor: 'text-indigo-400',
+                        bgColor: 'bg-indigo-50/30', tagColor: 'text-indigo-600 bg-indigo-50'
+                    },
+                    {
+                        title: '巴黎 ➔ 史特拉斯堡', date: '04.13 (Mon)',
+                        depTime: '12:46', depCode: 'EST',
+                        arrTime: '14:40', arrCode: 'SXB',
+                        flightNo: 'TGV 2431', duration: '1h 54m', nextDay: false,
+                        icon: 'fas fa-train', iconColor: 'text-purple-500', midIcon: 'fas fa-train', midIconColor: 'text-purple-400',
+                        bgColor: 'bg-purple-50/30', tagColor: 'text-purple-600 bg-purple-50'
+                    },
+                    {
+                        title: '巴黎 ➔ 台北 (經阿布達比)', date: '04.19 (Sun)',
+                        depTime: '10:05', depCode: 'CDG',
+                        arrTime: '10:00', arrCode: 'TPE',
+                        flightNo: '阿提哈德 EY32 / 898', duration: '17h 55m', nextDay: true,
+                        icon: 'fas fa-plane-arrival', iconColor: 'text-amber-500', midIcon: 'fas fa-plane', midIconColor: 'text-amber-400',
+                        bgColor: 'bg-amber-50/30', tagColor: 'text-amber-600 bg-amber-50'
+                    }
+                ],
+                'Partner1': [
+                    {
+                        title: '台北 ➔ 巴黎 (經阿布達比)', date: '04.11 (Sat)',
+                        depTime: '19:40', depCode: 'TPE',
+                        arrTime: '08:15', arrCode: 'CDG',
+                        flightNo: '阿提哈德 EY899 / EY31', duration: '18h 35m', nextDay: true,
+                        icon: 'fas fa-plane-departure', iconColor: 'text-sky-500', midIcon: 'fas fa-plane', midIconColor: 'text-sky-400',
+                        bgColor: '', tagColor: 'text-sky-600 bg-sky-50'
+                    },
+                    {
+                        title: '巴黎 ➔ 台北 (經阿布達比)', date: '04.19 (Sun)',
+                        depTime: '10:05', depCode: 'CDG',
+                        arrTime: '10:00', arrCode: 'TPE',
+                        flightNo: '阿提哈德 EY32 / EY898', duration: '17h 55m', nextDay: true,
+                        icon: 'fas fa-plane-arrival', iconColor: 'text-amber-500', midIcon: 'fas fa-plane', midIconColor: 'text-amber-400',
+                        bgColor: 'bg-amber-50/30', tagColor: 'text-amber-600 bg-amber-50'
+                    }
+                ],
+				'Partner2': [
+                    {
+                        title: '台北 ➔ 倫敦', date: '04.03 (Fri)',
+                        depTime: '08:20', depCode: 'TPE',
+                        arrTime: '16:30', arrCode: 'LHR',
+                        flightNo: '華航 CI 081', duration: '15h 10m', nextDay: false,
+                        icon: 'fas fa-plane-departure', iconColor: 'text-sky-500', midIcon: 'fas fa-plane', midIconColor: 'text-sky-400',
+                        bgColor: '', tagColor: 'text-sky-600 bg-sky-50'
+                    },
+                    {
+                        title: '倫敦 ➔ 台北', date: '04.13 (Mon)',
+                        depTime: '21:10', depCode: 'LHR',
+                        arrTime: '17:50', arrCode: 'TPE',
+                        flightNo: '華航 CI 082', duration: '13h 40m', nextDay: true,
+                        icon: 'fas fa-plane-arrival', iconColor: 'text-amber-500', midIcon: 'fas fa-plane', midIconColor: 'text-amber-400',
+                        bgColor: 'bg-amber-50/30', tagColor: 'text-amber-600 bg-amber-50'
+                    }
+                ]
+            });
+            // ▲▲▲ 新增結束 ▲▲▲
             const tabs = ['info', 'itinerary', 'shopping', 'packing', 'expenses'];
 			
             let touchStartX = 0;
@@ -2676,7 +2646,18 @@
                         imageUrl: 'https://loremflickr.com/600/400/taiwan,airport/all',
                         transport: null,
                         transportIcon: null
-                    }
+                    },
+					{ 
+						time: '時間待定', 
+						name: '機場接送', 
+						icon: 'fas fa-car', 
+						desc: '機場接送回豪士登堡', 
+						detail: '帶著滿滿的歐咪呀給，回到溫暖的家！',
+						mapUrl: 'https://www.google.com/maps/search/?api=1&query=Taiwan+Taoyuan+International+Airport',
+						imageUrl: 'https://loremflickr.com/600/400/airport,taiwan/all', 
+						transport: null, 
+						transportIcon: null
+					}
                 ]
             }
 			
@@ -2748,6 +2729,7 @@
 
             return {
                 isFetchingRates, fetchRealTimeRates,
+				activeTransportUser, transportData,
 				currentTab, calcAmount, calcCurrency, exchangeRates, itinerary, currentDayIndex, weatherForecast, isWeatherOpen,
                 shoppingList, isAddShopOpen, newShopNameInput, addShop, deleteShop, addItemToShop, deleteItem, uploadImage,
                 lightboxImage, openLightbox, closeLightbox,
