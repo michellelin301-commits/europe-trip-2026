@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>歐洲 11 日狂歡遊</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,7 +18,8 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             color: #444444;
             -webkit-font-smoothing: antialiased;
-            background-color: #E6E4E0; /* 溫和的石材灰底色 */
+            margin: 0;
+            padding: 0;
         }
 
         /* 自定義滾動條 - 柔和的大地色 */
@@ -37,28 +38,28 @@
             z-index: 0;
         }
         
-        /* 隱藏橫向選單的捲動條 */
+        /* 隱藏橫向選單的捲動條 (整併修復版) */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            /* ⚠️ 已經刪除會導致 Android 縮小跑版的 width: calc(100% + 2rem); */
         }
         
-        /* 鎖定全域與滑動設定 */
+        /* 鎖定全域與滑動設定 (修復 Android 縮小與破圖問題) */
         html, body {
             overflow: hidden;
             height: 100%;
             width: 100%;
-            position: fixed;
+            /* ⚠️ 已經刪除會導致高度計算錯誤的 position: fixed; */
             overscroll-behavior-y: none;
+            touch-action: pan-y; /* 確保正常上下滑動 */
         }
+        
         main {
             overscroll-behavior-y: contain;
             -webkit-overflow-scrolling: touch;
-        }
-        .hide-scrollbar {
-            -webkit-overflow-scrolling: touch;
-            width: calc(100% + 2rem);
         }
 
         /* 現代 APP 卡片點擊回饋 */
@@ -77,17 +78,32 @@
         }
 		
         [v-cloak] { display: none; }
+		
+		/* ==========================================
+           跨平台完美適配：iOS 動態島與底部橫條處理
+           ========================================== */
+        /* 1. 讓底部的導航列自動避開 iPhone 的 Home 橫條與 Android 的虛擬按鍵 */
+        nav {
+            padding-bottom: calc(1rem + env(safe-area-inset-bottom)) !important;
+            padding-top: 0.5rem !important;
+            min-height: calc(85px + env(safe-area-inset-bottom));
+        }
+
+        /* 3. 確保彈出視窗(景點詳情)的關閉按鈕不會被瀏海擋住 */
+        .bg-white.w-full.max-h-\[85\%\].rounded-t-3xl {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen m-0">
+<body class="m-0 bg-[#F7F6F3] sm:bg-[#E6E4E0] sm:flex sm:items-center sm:justify-center min-h-[100dvh]">
 
-<div class="w-full sm:w-[393px] h-[100dvh] sm:h-[852px] sm:rounded-[40px] sm:border-[8px] border-stone-300 shadow-2xl overflow-hidden relative bg-[#F7F6F3]">
+<div class="w-full sm:w-[393px] h-[100dvh] sm:h-[852px] sm:rounded-[40px] sm:border-[8px] sm:border-stone-300 sm:shadow-2xl overflow-hidden relative bg-[#F7F6F3]">
     
     <div id="app" class="w-full h-full overflow-hidden flex flex-col relative" v-cloak>
 		
         <main
             class="flex-grow overflow-y-auto overflow-x-hidden px-4 space-y-5 pb-8 relative"
-            :class="currentTab === 'itinerary' ? 'pt-0' : 'pt-5'"
+            :style="{ paddingTop: currentTab === 'itinerary' ? '0px' : `calc(1.25rem + env(safe-area-inset-top))` }"
             @touchstart="handleTouchStart"
             @touchend="handleTouchEnd"
         >
@@ -348,7 +364,8 @@
 
             <section v-if="currentTab === 'itinerary'" class="space-y-4 animate-fade-in">
                 <div 
-                    class="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md pt-3 pb-3 flex overflow-x-auto space-x-3 flex-shrink-0 hide-scrollbar -mx-4 px-4 border-b border-slate-200"
+                    class="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md pb-3 flex overflow-x-auto space-x-3 flex-shrink-0 hide-scrollbar -mx-4 px-4 border-b border-slate-200"
+                    style="padding-top: calc(0.75rem + env(safe-area-inset-top));"
                     @touchstart.stop 
                     @touchend.stop
                 >
