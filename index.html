@@ -2678,6 +2678,7 @@
             // 2. 網頁載入時，一次性把所有快取資料倒回來
             // 3. 生命週期：網頁載入時
             onMounted(() => {
+			
                 // (A) 私有資料：一次性把所有本機快取倒回來
                 for (const [key, refVar] of Object.entries(privateStorageKeys)) {
                     const savedData = localStorage.getItem(key);
@@ -2686,15 +2687,22 @@
                     }
                 }
                 
-                // (B) 初始化與同步行程
-				tripRef.child('itinerary').once('value').then((snapshot) => {
-					if (snapshot.exists()) {
-						// 如果雲端已經有資料，就拉下來更新畫面
-						itinerary.value = snapshot.val();
-					} else {
-						// ⭐️ 關鍵：如果雲端是空的，強制把程式碼裡寫好的陣列推上雲端！
-						tripRef.child('itinerary').set(itinerary.value); 
-					}
+				// 背景偷偷進行匿名登入
+				firebase.auth().signInAnonymously().then(() => {
+				console.log("隱形登入成功！");
+                
+					// (B) 初始化與同步行程
+					tripRef.child('itinerary').once('value').then((snapshot) => {
+						if (snapshot.exists()) {
+							// 如果雲端已經有資料，就拉下來更新畫面
+							itinerary.value = snapshot.val();
+						} else {
+							// ⭐️ 關鍵：如果雲端是空的，強制把程式碼裡寫好的陣列推上雲端！
+							tripRef.child('itinerary').set(itinerary.value); 
+						}
+					});
+				}).catch((error) => {
+					console.error("登入失敗", error);
 				});
             });
 
